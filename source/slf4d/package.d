@@ -4,3 +4,6 @@
  */
 module slf4d;
 
+public import slf4d.logger;
+public import slf4d.factory;
+public import slf4d.handler;

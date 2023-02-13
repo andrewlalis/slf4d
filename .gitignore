@@ -13,3 +13,4 @@ slf4d-test-*
 *.o
 *.obj
 *.lst
+*.a

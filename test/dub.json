@@ -1,0 +1,14 @@
+{
+	"authors": [
+		"Andrew Lalis"
+	],
+	"copyright": "Copyright © 2023, Andrew Lalis",
+	"description": "A minimal D application.",
+	"license": "MIT",
+	"name": "log-tester",
+	"dependencies": {
+		"slf4d": {
+			"path": "../"
+		}
+	}
+}
