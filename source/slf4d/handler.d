@@ -12,6 +12,11 @@ import slf4d.logger;
  * `Logger`. Only messages whose level is greater than or equal to the logger's
  * level will be sent to handlers. For example, a Logger configured at an INFO
  * log level will send INFO, WARN, and ERROR messages, but not DEBUG or TRACE.
+ *
+ * Each Logger has a single root LogHandler instance. This "root handler" can
+ * be a very simple handler that sends messages to stdout, or it could be a
+ * more complex composition of handlers to distribute logs to various locations
+ * according to filtering logic.
  */
 interface LogHandler {
     /** 
@@ -34,6 +39,14 @@ class CachingLogHandler : LogHandler {
     }
 }
 
+unittest {
+    CachingLogHandler handler = new CachingLogHandler();
+    Logger logger = Logger(handler);
+    assert(handler.messages.length == 0);
+    logger.info("Hello world!");
+    assert(handler.messages.length == 1);
+}
+
 /** 
  * A very primitive log handler that writes messages to stdout. The exact
  * format is undefined, and this handler should **not** be used in production
@@ -43,13 +56,76 @@ class StdoutLogHandler : LogHandler {
     import std.stdio;
 
     void handle(LogMessage msg) {
-        writefln!"[logger=%s, module=%s, func=%s %s] %s: %s"(
+        writefln!"[logger=%s, module=%s, func=%s level=%s] %s: %s"(
             msg.loggerName,
-            msg.context.moduleName,
-            msg.context.functionName,
+            msg.sourceContext.moduleName,
+            msg.sourceContext.functionName,
             msg.level.name,
             msg.timestamp.toISOExtString(),
             msg.message
         );
     }
+}
+
+/** 
+ * A log handler that simply passes any log message it receives to a list of
+ * other handlers.
+ */
+class MultiLogHandler : LogHandler {
+    private LogHandler[] handlers;
+
+    public this(LogHandler[] handlers) {
+        this.handlers = handlers;
+    }
+
+    void handle(LogMessage msg) {
+        foreach (handler; handlers) {
+            handler.handle(msg);
+        }
+    }
+}
+
+unittest {
+    CachingLogHandler h1 = new CachingLogHandler();
+    CachingLogHandler h2 = new CachingLogHandler();
+    LogHandler multiHandler = new MultiLogHandler([h1, h2]);
+    Logger logger = Logger(multiHandler);
+    logger.info("Hello world!");
+    assert(h1.messages.length == 1);
+    assert(h2.messages.length == 1);
+}
+
+/** 
+ * A handler that applies a filter to log messages, and only passes messages to
+ * its internal handler if the filter returns `true`.
+ */
+class FilterLogHandler : LogHandler {
+    private bool function (LogMessage) filterFunction;
+    private LogHandler handler;
+
+    public this(LogHandler handler, bool function (LogMessage) filterFunction) {
+        this.handler = handler;
+        this.filterFunction = filterFunction;
+    }
+
+    void handle(LogMessage msg) {
+        if (this.filterFunction(msg)) {
+            this.handler.handle(msg);
+        }
+    }
+}
+
+unittest {
+    CachingLogHandler baseHandler = new CachingLogHandler();
+    FilterLogHandler filterHandler = new FilterLogHandler(
+        baseHandler,
+        (msg) {
+            return msg.message.length > 10;
+        }
+    );
+    Logger logger = Logger(filterHandler);
+    logger.info("Testing");
+    assert(baseHandler.messages.length == 0);
+    logger.info("This is a long string!");
+    assert(baseHandler.messages.length == 1);
 }
