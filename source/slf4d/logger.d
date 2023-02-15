@@ -114,6 +114,44 @@ struct Logger {
         return LogBuilder.forLogger(this).lvl(Levels.TRACE);
     }
 
+    public void trace(
+        string msg,
+        string moduleName = __MODULE__,
+        string functionName = __PRETTY_FUNCTION__
+    ) {
+        this.log(Levels.TRACE, msg, moduleName, functionName);
+    }
+
+    public void traceF(string fmt, T...)(
+        T args,
+        string moduleName = __MODULE__,
+        string functionName = __PRETTY_FUNCTION__
+    ) {
+        this.logF!(fmt, T)(Levels.TRACE, args, moduleName, functionName);
+    }
+
+    // DEBUG functions
+
+    public LogBuilder debugBuilder() {
+        return LogBuilder.forLogger(this).lvl(Levels.DEBUG);
+    }
+
+    public void debug_(
+        string msg,
+        string moduleName = __MODULE__,
+        string functionName = __PRETTY_FUNCTION__
+    ) {
+        this.log(Levels.DEBUG, msg, moduleName, functionName);
+    }
+
+    public void debugF(string fmt, T...)(
+        T args,
+        string moduleName = __MODULE__,
+        string functionName = __PRETTY_FUNCTION__
+    ) {
+        this.logF!(fmt, T)(Levels.DEBUG, args, moduleName, functionName);
+    }
+
     // INFO functions
 
     public LogBuilder infoBuilder() {
@@ -134,6 +172,28 @@ struct Logger {
         string functionName = __PRETTY_FUNCTION__
     ) {
         this.logF!(fmt, T)(Levels.INFO, args, moduleName, functionName);
+    }
+
+    // WARN functions
+
+    public LogBuilder warnBuilder() {
+        return LogBuilder.forLogger(this).lvl(Levels.WARN);
+    }
+
+    public void warn(
+        string msg,
+        string moduleName = __MODULE__,
+        string functionName = __PRETTY_FUNCTION__
+    ) {
+        this.log(Levels.WARN, msg, moduleName, functionName);
+    }
+
+    public void warnF(string fmt, T...)(
+        T args,
+        string moduleName = __MODULE__,
+        string functionName = __PRETTY_FUNCTION__
+    ) {
+        this.logF!(fmt, T)(Levels.WARN, args, moduleName, functionName);
     }
 
     // ERROR functions
