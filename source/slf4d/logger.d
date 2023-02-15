@@ -136,6 +136,28 @@ struct Logger {
         this.logF!(fmt, T)(Levels.INFO, args, moduleName, functionName);
     }
 
+    // ERROR functions
+
+    public LogBuilder errorBuilder() {
+        return LogBuilder.forLogger(this).lvl(Levels.ERROR);
+    }
+
+    public void error(
+        string msg,
+        string moduleName = __MODULE__,
+        string functionName = __PRETTY_FUNCTION__
+    ) {
+        this.log(Levels.ERROR, msg, moduleName, functionName);
+    }
+
+    public void errorF(string fmt, T...)(
+        T args,
+        string moduleName = __MODULE__,
+        string functionName = __PRETTY_FUNCTION__
+    ) {
+        this.logF!(fmt, T)(Levels.ERROR, args, moduleName, functionName);
+    }
+
     unittest {
         auto handler = new CachingLogHandler();
         Logger log = Logger(handler, Levels.INFO);

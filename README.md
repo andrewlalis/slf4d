@@ -12,21 +12,21 @@ Different logging providers are hooked into the SLF4D framework with a logging a
 The following diagram illustrates the SLF4D flow of information.
 ```text
                     /----------------------------\
-                    |  LoggerFactory (Provider)  |
-                    \----------------------------/
-                                |
-                                |   getLogger()
-                               \ /
-                                v
-/----------------\ log("msg") /------------------\
-|  Application   | -------->  |  Logger (SLF4D)  |
-\----------------/            \------------------/
-                                 |
-                                 |   handle(msg)
-                                \ /
-                                 v
-                      /-------------------------\
-                      |  LogHandler (Provider)  |
+                    |  LoggerFactory (Provider)  |  <------+
+                    \----------------------------/         |
+                                |                          |
+                                |   getLogger()            |
+                               \ /                         |
+                                v                          |
+/----------------\ log("msg") /------------------\   /------------\
+|  Application   | -------->  |  Logger (SLF4D)  |   |  Provider  |
+\----------------/            \------------------/   \------------/
+                                 |                         |
+                                 |   handle(msg)           |
+                                \ /                        |
+                                 v                         |
+                      /-------------------------\          |
+                      |  LogHandler (Provider)  |  <-------+
                       \-------------------------/
 ```
 - Your application produces log messages using a `Logger`.
@@ -59,6 +59,22 @@ void doStuff() {
     auto log = loggerFactory.getLogger();
     // Do things...
     log.info("This is my log message.");
+}
+```
+
+### Default Provider
+In case you just want to get started using SLF4D right away, we've included the `slf4d.default_provider` module which defines a basic provider that just logs simple messages to stdout and stderr.
+
+Your setup would look like this:
+```d
+module app_main;
+
+import slf4d;
+import slf4d.default_provider : getLoggerFactory();
+
+static LoggerFactory loggerFactory;
+static this() {
+	loggerFactory = getLoggerFactory();
 }
 ```
 
