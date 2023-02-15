@@ -12,8 +12,14 @@ import std.datetime;
  * The logger is the core component of SLF4D. Use it to generate log messages
  * in your code. An ad-hoc Logger can be created and used anywhere, but usually
  * you'll want to use a `LoggerFactory` to obtain a pre-configured Logger that
- * has been set up with an application-specific LogHandler.
- *
+ * has been set up with an application-specific LogHandler. The configured
+ * LogHandler is marked as `shared`, because usually only one handler instance
+ * exists per application.
+ * 
+ * For most users, you can obtain a pre-configured logger by importing the
+ * `slf4d` module and adding `auto log = loggerFactory.getLogger();` to your
+ * code.
+ * 
  * Note that the D language offers some special keywords like `__MODULE__` and
  * `__PRETTY_FUNCTION__` which at compile time resolve to the respective source
  * symbols, and are used heavily here for adding context to log messages.
@@ -23,13 +29,13 @@ import std.datetime;
  * to these keywords, and you shouldn't need to ever provide a value for these.
  */
 struct Logger {
-    private LogHandler handler;
+    private shared LogHandler handler;
     private const Level level;
     private const string name;
 
     /** 
      * Initializes a new logger. Usually, you won't use this constructor, and
-     * instead, you should obtain a Logger via `LoggerFactory.getLogger()`.
+     * instead, you should obtain a Logger via `loggerFactory.getLogger()`.
      * Params:
      *   handler = The handler to handle log messages.
      *   level = The log level of this logger. Only log messages with a level
@@ -37,7 +43,7 @@ struct Logger {
      *   name = The name of the logger. It defaults to the name of the module
      *          where the logger was initialized.
      */
-    public this(LogHandler handler, Level level = Levels.TRACE, string name = __MODULE__) {
+    public this(shared LogHandler handler, Level level = Levels.TRACE, string name = __MODULE__) {
         this.handler = handler;
         this.level = level;
         this.name = name;
@@ -219,7 +225,7 @@ struct Logger {
     }
 
     unittest {
-        auto handler = new CachingLogHandler();
+        auto handler = new shared CachingLogHandler();
         Logger log = Logger(handler, Levels.INFO);
         log.log(LogMessage(Levels.ERROR, "Oh no!", log.name, Clock.currTime(), LogMessageSourceContext()));
         LogMessage lastMessage = handler.messages[0];

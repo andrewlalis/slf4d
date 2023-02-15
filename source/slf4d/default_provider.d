@@ -5,16 +5,19 @@
 module slf4d.default_provider;
 
 import slf4d;
+import slf4d.provider;
 
-/** 
- * Gets a default `LoggerFactory` instance for constructing loggers.
- * Returns: The factory.
- */
-public LoggerFactory getLoggerFactory() {
-    return new SimpleLoggerFactory(
-        new DefaultLogHandler(),
-        Levels.INFO
-    );
+class DefaultProvider : LoggingProvider {
+    /** 
+     * Gets a default `LoggerFactory` instance for constructing loggers.
+     * Returns: The factory.
+     */
+    shared shared(LoggerFactory) defineLoggerFactory() {
+        return new shared SimpleLoggerFactory(
+            new DefaultLogHandler(),
+            Levels.INFO
+        );
+    }
 }
 
 /** 
@@ -22,7 +25,7 @@ public LoggerFactory getLoggerFactory() {
  * in the case of ERROR messages.
  */
 private class DefaultLogHandler : LogHandler {
-    void handle(LogMessage msg) {
+    shared void handle(LogMessage msg) {
         import std.format;
         import std.stdio;
 
@@ -51,7 +54,7 @@ private class DefaultLogHandler : LogHandler {
 }
 
 unittest {
-    LoggerFactory factory = getLoggerFactory();
+    auto factory = new shared DefaultProvider().defineLoggerFactory();
     auto log = factory.getLogger();
     log.info("Testing default provider");
     log.error("Testing default provider error message.");

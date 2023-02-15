@@ -1,8 +1,8 @@
 module other;
 
-import app : loggerFactory;
+import slf4d;
 
 void doStuff() {
-    auto log = loggerFactory.getLogger();
+    auto log = getLogger();
     log.infoBuilder().msg("Hello").log();
 }

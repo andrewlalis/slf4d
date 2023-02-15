@@ -17,14 +17,17 @@ import slf4d.logger;
  * be a very simple handler that sends messages to stdout, or it could be a
  * more complex composition of handlers to distribute logs to various locations
  * according to filtering logic.
+ *
+ * Note that the handler is `shared`. One handler instance exists and is used
+ * by all application threads.
  */
-interface LogHandler {
+shared interface LogHandler {
     /** 
      * Handles a log message.
      * Params:
      *   msg = The log message that was generated.
      */
-    void handle(LogMessage msg);
+    shared void handle(LogMessage msg);
 }
 
 /** 
@@ -32,15 +35,15 @@ interface LogHandler {
  * array. This can be useful for testing.
  */
 class CachingLogHandler : LogHandler {
-    public LogMessage[] messages;
+    public shared LogMessage[] messages;
 
-    public void handle(LogMessage msg) {
+    public shared void handle(LogMessage msg) {
         this.messages ~= msg;
     }
 }
 
 unittest {
-    CachingLogHandler handler = new CachingLogHandler();
+    auto handler = new shared CachingLogHandler();
     Logger logger = Logger(handler);
     assert(handler.messages.length == 0);
     logger.info("Hello world!");
@@ -55,7 +58,7 @@ unittest {
 class StdoutLogHandler : LogHandler {
     import std.stdio;
 
-    void handle(LogMessage msg) {
+    shared void handle(LogMessage msg) {
         writefln!"[logger=%s, module=%s, func=%s level=%s] %s: %s"(
             msg.loggerName,
             msg.sourceContext.moduleName,
@@ -72,13 +75,13 @@ class StdoutLogHandler : LogHandler {
  * other handlers.
  */
 class MultiLogHandler : LogHandler {
-    private LogHandler[] handlers;
+    private shared LogHandler[] handlers;
 
-    public this(LogHandler[] handlers) {
+    public shared this(shared LogHandler[] handlers) {
         this.handlers = handlers;
     }
 
-    void handle(LogMessage msg) {
+    shared void handle(LogMessage msg) {
         foreach (handler; handlers) {
             handler.handle(msg);
         }
@@ -86,9 +89,9 @@ class MultiLogHandler : LogHandler {
 }
 
 unittest {
-    CachingLogHandler h1 = new CachingLogHandler();
-    CachingLogHandler h2 = new CachingLogHandler();
-    LogHandler multiHandler = new MultiLogHandler([h1, h2]);
+    auto h1 = new shared CachingLogHandler();
+    auto h2 = new shared CachingLogHandler();
+    auto multiHandler = new shared MultiLogHandler([h1, h2]);
     Logger logger = Logger(multiHandler);
     logger.info("Hello world!");
     assert(h1.messages.length == 1);
@@ -101,14 +104,14 @@ unittest {
  */
 class FilterLogHandler : LogHandler {
     private bool function (LogMessage) filterFunction;
-    private LogHandler handler;
+    private shared LogHandler handler;
 
-    public this(LogHandler handler, bool function (LogMessage) filterFunction) {
+    public shared this(shared LogHandler handler, bool function (LogMessage) filterFunction) {
         this.handler = handler;
         this.filterFunction = filterFunction;
     }
 
-    void handle(LogMessage msg) {
+    shared void handle(LogMessage msg) {
         if (this.filterFunction(msg)) {
             this.handler.handle(msg);
         }
@@ -116,8 +119,8 @@ class FilterLogHandler : LogHandler {
 }
 
 unittest {
-    CachingLogHandler baseHandler = new CachingLogHandler();
-    FilterLogHandler filterHandler = new FilterLogHandler(
+    auto baseHandler = new shared CachingLogHandler();
+    auto filterHandler = new shared FilterLogHandler(
         baseHandler,
         (msg) {
             return msg.message.length > 10;
