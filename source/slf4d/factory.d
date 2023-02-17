@@ -28,14 +28,35 @@ shared interface LoggerFactory {
  */
 shared class SimpleLoggerFactory : LoggerFactory {
     private shared LogHandler handler;
-    private const Level level;
+    private Level level;
 
     public shared this(shared LogHandler handler, Level level) {
         this.handler = handler;
         this.level = level;
     }
 
+    shared void setLevel(Level level) {
+        this.level = level;
+    }
+
     shared Logger getLogger(string name = __MODULE__) {
         return Logger(this.handler, this.level, name);
     }
+}
+
+unittest {
+    import slf4d.handler;
+    auto handler = new shared CachingLogHandler();
+    auto f1 = new shared SimpleLoggerFactory(handler, Levels.INFO);
+    Logger log1 = f1.getLogger();
+    log1.debug_("Testing");
+    assert(handler.messages.length == 0);
+    log1.warn("Testing");
+    assert(handler.messages.length == 1);
+    handler.reset();
+
+    f1.setLevel(Levels.TRACE);
+    Logger log2 = f1.getLogger();
+    log2.debug_("Testing");
+    assert(handler.messages.length == 1);
 }

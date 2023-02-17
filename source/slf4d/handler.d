@@ -50,6 +50,10 @@ class CachingLogHandler : LogHandler {
     public shared void handle(LogMessage msg) {
         this.messages ~= msg;
     }
+
+    public shared void reset() {
+        this.messages = [];
+    }
 }
 
 unittest {

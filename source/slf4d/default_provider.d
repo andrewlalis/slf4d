@@ -7,7 +7,16 @@ module slf4d.default_provider;
 import slf4d;
 import slf4d.provider;
 
+/** 
+ * The default provider class.
+ */
 class DefaultProvider : LoggingProvider {
+    private Level level;
+
+    public shared this(Level level = Levels.INFO) {
+        this.level = level;
+    }
+
     /** 
      * Gets a default `LoggerFactory` instance for constructing loggers.
      * Returns: The factory.
@@ -15,7 +24,7 @@ class DefaultProvider : LoggingProvider {
     shared shared(LoggerFactory) defineLoggerFactory() {
         return new shared SimpleLoggerFactory(
             new DefaultLogHandler(),
-            Levels.INFO
+            this.level
         );
     }
 }
