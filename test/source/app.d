@@ -4,9 +4,12 @@ import slf4d.provider;
 
 import other;
 
+private Logger log;
+static this() {
+	log = getLogger();
+}
+
 void main() {
-	// configureLoggingProvider(new MyProvider());
-	auto log = getLogger();
 	log.builder()
 		.lvl(Levels.INFO)
 		.msg("Testing")
@@ -15,13 +18,8 @@ void main() {
 	log.info("Hello world!");
 	log.logF!"Hello, %d"(Levels.ERROR, 123);
 	log.infoF!"This is an info message, %s"("Andrew");
-}
+	log.debug_("This is a debug message.");
 
-class MyProvider : LoggingProvider {
-	shared shared(LoggerFactory) defineLoggerFactory() {
-		return new shared SimpleLoggerFactory(
-			new shared StdoutLogHandler(),
-			Levels.TRACE
-		);
-	}
+	auto otherLog = getLogger("this_is_a_longer_logger_name");
+	otherLog.info("Hello world!");
 }

@@ -12,9 +12,10 @@ import slf4d.provider;
  */
 class NoOpProvider : LoggingProvider {
     shared shared(LoggerFactory) defineLoggerFactory() {
-        return new shared SimpleLoggerFactory(
+        Level highestLevel = Level(1_000_000, "NO-OP");
+        return new shared DefaultLoggerFactory(
             new DiscardingLogHandler(),
-            Levels.TRACE
+            highestLevel
         );
     }
 }

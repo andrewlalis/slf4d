@@ -11,21 +11,12 @@ import slf4d.provider;
  * The default provider class.
  */
 class DefaultProvider : LoggingProvider {
-    private Level level;
-
-    public shared this(Level level = Levels.INFO) {
-        this.level = level;
-    }
-
     /** 
      * Gets a default `LoggerFactory` instance for constructing loggers.
      * Returns: The factory.
      */
     shared shared(LoggerFactory) defineLoggerFactory() {
-        return new shared SimpleLoggerFactory(
-            new DefaultLogHandler(),
-            this.level
-        );
+        return new shared DefaultLoggerFactory(new DefaultLogHandler());
     }
 }
 
@@ -34,23 +25,17 @@ class DefaultProvider : LoggingProvider {
  * in the case of ERROR messages.
  */
 private class DefaultLogHandler : LogHandler {
+    import std.datetime;
+    import std.format : format;
+    import std.range;
+
     shared void handle(LogMessage msg) {
-        import std.format;
         import std.stdio;
 
-        string simpleTimestampStr = format!"%04d-%02d-%02dT%02d:%02d:%02d"(
-            msg.timestamp.year,
-            msg.timestamp.month,
-            msg.timestamp.day,
-            msg.timestamp.hour,
-            msg.timestamp.minute,
-            msg.timestamp.second
-        );
-
-        string logStr = format!"[%s %s] %s: %s"(
-            msg.loggerName,
-            msg.level.name,
-            simpleTimestampStr,
+        string logStr = format!"%s %s %s %s"(
+            formatLoggerName(msg.loggerName),
+            padLeft(msg.level.name, ' ', 8),
+            formatTimestamp(msg.timestamp),
             msg.message
         );
 
@@ -58,6 +43,29 @@ private class DefaultLogHandler : LogHandler {
             stderr.writeln(logStr);
         } else {
             stdout.writeln(logStr);
+        }
+    }
+
+    private static string formatTimestamp(SysTime timestamp) {
+        return format!"%04d-%02d-%02dT%02d:%02d:%02d.%03d"(
+            timestamp.year,
+            timestamp.month,
+            timestamp.day,
+            timestamp.hour,
+            timestamp.minute,
+            timestamp.second,
+            timestamp.fracSecs.total!"msecs"
+        );
+    }
+
+    private static string formatLoggerName(string name) {
+        const size_t loggerNameLength = 20;
+        if (name.length < loggerNameLength) {
+            return cast(string) padRight(name, ' ', loggerNameLength).array;
+        } else if (name.length > loggerNameLength) {
+            return name[0 .. loggerNameLength - 3] ~ "...";
+        } else {
+            return name;
         }
     }
 }
