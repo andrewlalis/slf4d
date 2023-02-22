@@ -6,7 +6,7 @@
     src="https://github.com/andrewlalis/slf4d/blob/main/design/banner_1024.png"
     alt="SLF4D Banner Image"
     style="max-width: 500px"
->
+/>
 
 Simple Logging Facade for D, inspired by SLF4J. Add it to your project with `dub add slf4d`, and start logging sensibly!
 
