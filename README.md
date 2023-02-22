@@ -1,12 +1,12 @@
-# SLF4D
-
-![DUB](https://img.shields.io/dub/v/slf4d?color=%23c10000ff%20&style=flat-square) ![DUB](https://img.shields.io/dub/dt/slf4d?style=flat-square) ![DUB](https://img.shields.io/dub/l/slf4d?style=flat-square) ![GitHub Workflow Status (with branch)](https://img.shields.io/github/actions/workflow/status/andrewlalis/slf4d/run-tests.yml?branch=main&label=tests&style=flat-square)
-
 <img
     src="https://github.com/andrewlalis/slf4d/blob/main/design/banner_1024.png"
     alt="SLF4D Banner Image"
     style="max-width: 500px"
 />
+
+# SLF4D
+
+![DUB](https://img.shields.io/dub/v/slf4d?color=%23c10000ff%20&style=flat-square) ![DUB](https://img.shields.io/dub/dt/slf4d?style=flat-square) ![DUB](https://img.shields.io/dub/l/slf4d?style=flat-square) ![GitHub Workflow Status (with branch)](https://img.shields.io/github/actions/workflow/status/andrewlalis/slf4d/run-tests.yml?branch=main&label=tests&style=flat-square)
 
 Simple Logging Facade for D, inspired by SLF4J. Add it to your project with `dub add slf4d`, and start logging sensibly!
 
