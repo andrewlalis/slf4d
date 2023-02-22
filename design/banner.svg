@@ -29,8 +29,8 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="0.9899495"
-     inkscape:cx="482.34"
-     inkscape:cy="-25.601362"
+     inkscape:cx="228.88757"
+     inkscape:cy="62.190702"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -39,7 +39,8 @@
      inkscape:window-height="1009"
      inkscape:window-x="0"
      inkscape:window-y="0"
-     inkscape:window-maximized="1" />
+     inkscape:window-maximized="1"
+     inkscape:pagecheckerboard="true" />
   <metadata
      id="metadata5">
     <rdf:RDF>
@@ -57,6 +58,14 @@
      inkscape:groupmode="layer"
      id="layer1"
      transform="translate(0,-229.26667)">
+    <rect
+       style="opacity:1;fill:#fffef8;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       id="rect907"
+       width="203.2"
+       height="67.73333"
+       x="-3.5527137e-15"
+       y="229.26668"
+       rx="13.229166" />
     <flowRoot
        xml:space="preserve"
        id="flowRoot815"
