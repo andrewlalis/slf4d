@@ -1,0 +1,14 @@
+{
+	"authors": [
+		"Andrew Lalis"
+	],
+	"copyright": "Copyright © 2023, Andrew Lalis",
+	"description": "SLF4D basic usage example",
+	"license": "MIT",
+	"name": "basic-usage",
+	"dependencies": {
+		"slf4d": {
+			"path": "../../"
+		}
+	}
+}

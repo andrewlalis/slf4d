@@ -1,0 +1,15 @@
+.dub
+docs.json
+__dummy.html
+docs/
+/basic-usage
+basic-usage.so
+basic-usage.dylib
+basic-usage.dll
+basic-usage.a
+basic-usage.lib
+basic-usage-test-*
+*.exe
+*.o
+*.obj
+*.lst

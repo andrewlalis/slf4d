@@ -1,0 +1,14 @@
+{
+	"authors": [
+		"Andrew Lalis"
+	],
+	"copyright": "Copyright © 2023, Andrew Lalis",
+	"description": "SLF4D custom provider example",
+	"license": "MIT",
+	"name": "custom-provider",
+	"dependencies": {
+		"slf4d": {
+			"path": "../../"
+		}
+	}
+}

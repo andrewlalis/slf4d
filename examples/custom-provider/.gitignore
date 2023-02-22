@@ -1,0 +1,15 @@
+.dub
+docs.json
+__dummy.html
+docs/
+/custom-provider
+custom-provider.so
+custom-provider.dylib
+custom-provider.dll
+custom-provider.a
+custom-provider.lib
+custom-provider-test-*
+*.exe
+*.o
+*.obj
+*.lst
