@@ -1,7 +1,7 @@
 <img
     src="https://github.com/andrewlalis/slf4d/blob/main/design/banner_1024.png"
     alt="SLF4D Banner Image"
-    style="max-width: 500px"
+    style="max-width: 300px"
 />
 
 # SLF4D

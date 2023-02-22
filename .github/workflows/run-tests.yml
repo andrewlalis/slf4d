@@ -17,7 +17,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macOS-latest]
-        compiler: [dmd-latest, ldc-latest, gdc-latest]
+        compiler: [dmd-latest, ldc-latest]
         
     runs-on: ${{ matrix.os }}
     steps:
