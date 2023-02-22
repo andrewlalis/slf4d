@@ -22,13 +22,19 @@ class DefaultProvider : LoggingProvider {
 
 /** 
  * A default handler that just writes a formatted string to stdout, or stderr
- * in the case of ERROR messages.
+ * in the case of WARNING or ERROR messages.
  */
 private class DefaultLogHandler : LogHandler {
     import std.datetime;
     import std.format : format;
     import std.range;
 
+    /** 
+     * Handles log messages by writing them to standard output (or standard
+     * error if the level is WARNING or higher).
+     * Params:
+     *   msg = The message that was produced.
+     */
     shared void handle(LogMessage msg) {
         import std.stdio;
 
@@ -46,6 +52,13 @@ private class DefaultLogHandler : LogHandler {
         }
     }
 
+    /** 
+     * Formats the log message's timestamp as a limited ISO-8601 format that's
+     * accurate to the millisecond.
+     * Params:
+     *   timestamp = The timestamp to format.
+     * Returns: The formatted timestamp.
+     */
     private static string formatTimestamp(SysTime timestamp) {
         return format!"%04d-%02d-%02dT%02d:%02d:%02d.%03d"(
             timestamp.year,
@@ -58,6 +71,13 @@ private class DefaultLogHandler : LogHandler {
         );
     }
 
+    /** 
+     * Formats the logger's name (usually this is the name of the module where
+     * the logger was created) so that it is of a uniform character width.
+     * Params:
+     *   name = The logger's name.
+     * Returns: The formatted logger name string.
+     */
     private static string formatLoggerName(string name) {
         const size_t loggerNameLength = 20;
         if (name.length < loggerNameLength) {

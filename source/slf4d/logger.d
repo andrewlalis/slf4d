@@ -1,6 +1,6 @@
 /**
  * This module defines the `Logger`; the central component from which all log
- * messages originate.
+ * messages originate. You 
  */
 module slf4d.logger;
 
@@ -11,14 +11,10 @@ import std.datetime;
 /** 
  * The logger is the core component of SLF4D. Use it to generate log messages
  * in your code. An ad-hoc Logger can be created and used anywhere, but usually
- * you'll want to use a `LoggerFactory` to obtain a pre-configured Logger that
- * has been set up with an application-specific LogHandler. The configured
- * LogHandler is marked as `shared`, because usually only one handler instance
- * exists per application.
- * 
- * For most users, you can obtain a pre-configured logger by importing the
- * `slf4d` module and adding `auto log = loggerFactory.getLogger();` to your
- * code.
+ * you'll want to use the `getLogger()` function to obtain a pre-configured
+ * Logger that has been set up with an application-specific LogHandler. The
+ * configured LogHandler is marked as `shared`, because only one handler
+ * instance exists per application.
  * 
  * Note that the D language offers some special keywords like `__MODULE__` and
  * `__PRETTY_FUNCTION__` which at compile time resolve to the respective source

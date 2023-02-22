@@ -31,19 +31,48 @@ shared class DefaultLoggerFactory : LoggerFactory {
     private Level rootLoggingLevel;
     private ModuleLoggingLevelMapping[] moduleMappings;
 
+    /** 
+     * Constructs the factory with the given handler, and optionally a root
+     * logging level.
+     * Params:
+     *   handler = The handler that will handle all log messages.
+     *   rootLoggingLevel = The root logging level, which is the default level
+     *   assigned to all Loggers produced by this factory, unless a module
+     *   specific level is set.
+     */
     public shared this(shared LogHandler handler, Level rootLoggingLevel = Levels.INFO) {
         this.handler = handler;
         this.rootLoggingLevel = rootLoggingLevel;
     }
 
+    /** 
+     * Sets the root logging level for this factory.
+     * Params:
+     *   level = The root logging level.
+     */
     public shared void setRootLevel(Level level) {
         this.rootLoggingLevel = level;
     }
 
+    /** 
+     * Sets the logging level for a given module pattern.
+     * Params:
+     *   modulePattern = The module pattern to match against.
+     *   level = The logging level to apply to Loggers whose name matches the
+     *           given module pattern.
+     */
     public shared void setModuleLevel(string modulePattern, Level level) {
         this.moduleMappings ~= ModuleLoggingLevelMapping(modulePattern, level);
     }
 
+    /** 
+     * Gets a Logger. The Logger's level is set according to the root logging
+     * level, unless there exists a module-specific level that was set via
+     * `setModuleLevel`.
+     * Params:
+     *   name = The logger's name, which defaults to the current module name.
+     * Returns: The Logger.
+     */
     public shared Logger getLogger(string name = __MODULE__) {
         import std.algorithm : startsWith;
         Level level = this.rootLoggingLevel;

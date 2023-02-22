@@ -19,13 +19,7 @@ import slf4d.default_provider;
 
 /** 
  * The logger factory used to obtain new Loggers wherever SLF4D is used. This
- * is considered a global variable that's shared among all threads of the
- * application, and should only be initialized once on application startup.
- *
- * Note to library developers: If your library uses SLF4D to send log messages,
- * *do not* modify this global shared factory! The end-user application decides
- * which factory it would like to use system-wide logging, and libraries simply
- * use whatever factory was chosen.
+ * is supplied by the configured LoggingProvider.
  */
 private shared LoggerFactory loggerFactory;
 
@@ -47,7 +41,9 @@ public void configureLoggingProvider(shared LoggingProvider provider) {
 }
 
 /** 
- * Gets the global shared logger factory instance.
+ * Gets the global shared logger factory instance. If no provider has been
+ * explicitly configured, the `slf4d.default_provider` module's
+ * `DefaultProvider` is used.
  * Returns: The logger factory.
  */
 public shared(LoggerFactory) getLoggerFactory() {
