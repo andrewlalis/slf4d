@@ -2,9 +2,10 @@ module custom_provider;
 
 import slf4d;
 import slf4d.provider;
+import slf4d.default_provider : DefaultLoggerFactory;
 
 class CustomProvider : LoggingProvider {
-    shared shared(LoggerFactory) defineLoggerFactory() {
+    shared shared(LoggerFactory) getLoggerFactory() {
         return new shared DefaultLoggerFactory(
             new shared CustomLogHandler()
         );

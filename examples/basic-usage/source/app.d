@@ -25,7 +25,7 @@ void main() {
 	log.debug_("Same with debug. Note that the method is \"debug_\", because \"debug\" is a D keyword.");
 	
 	// Because we are using the default provider, its LoggerFactory supports setting the log level.
-	DefaultLoggerFactory factory = cast(DefaultLoggerFactory) getLoggerFactory();
+	auto factory = cast(shared DefaultLoggerFactory) getLoggerFactory();
 	factory.setRootLevel(Levels.TRACE);
 
 	auto verboseLog = getLogger();

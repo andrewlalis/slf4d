@@ -11,5 +11,5 @@ import slf4d.factory;
  * the provider itself must also be shared.
  */
 interface LoggingProvider {
-    shared shared(LoggerFactory) defineLoggerFactory();
+    shared shared(LoggerFactory) getLoggerFactory();
 }

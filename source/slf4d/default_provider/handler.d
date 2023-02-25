@@ -1,30 +1,15 @@
 /** 
- * A default SLF4D provider that implements a simple string log handler to
- * write messages to stdout or stderr.
+ * Module which defines the default provider's log handler implementation.
  */
-module slf4d.default_provider;
+module slf4d.default_provider.handler;
 
 import slf4d;
-import slf4d.provider;
-
-/** 
- * The default provider class.
- */
-class DefaultProvider : LoggingProvider {
-    /** 
-     * Gets a default `LoggerFactory` instance for constructing loggers.
-     * Returns: The factory.
-     */
-    shared shared(LoggerFactory) defineLoggerFactory() {
-        return new shared DefaultLoggerFactory(new DefaultLogHandler());
-    }
-}
 
 /** 
  * A default handler that just writes a formatted string to stdout, or stderr
  * in the case of WARNING or ERROR messages.
  */
-private class DefaultLogHandler : LogHandler {
+class DefaultLogHandler : LogHandler {
     import std.datetime;
     import std.format : format;
     import std.range;
@@ -35,7 +20,7 @@ private class DefaultLogHandler : LogHandler {
      * Params:
      *   msg = The message that was produced.
      */
-    shared void handle(LogMessage msg) {
+    public shared void handle(LogMessage msg) {
         import std.stdio;
 
         string logStr = format!"%s %s %s %s"(
@@ -91,7 +76,8 @@ private class DefaultLogHandler : LogHandler {
 }
 
 unittest {
-    auto factory = new shared DefaultProvider().defineLoggerFactory();
+    import slf4d.default_provider.provider;
+    auto factory = new shared DefaultProvider().getLoggerFactory();
     auto log = factory.getLogger();
     log.info("Testing default provider");
     log.error("Testing default provider error message.");

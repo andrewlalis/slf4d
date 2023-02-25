@@ -16,6 +16,7 @@ public import slf4d.level;
 
 import slf4d.provider;
 import slf4d.default_provider;
+import core.sync.rwmutex;
 
 /** 
  * The logger factory used to obtain new Loggers wherever SLF4D is used. This
@@ -31,13 +32,24 @@ private shared LoggerFactory loggerFactory;
 private shared LoggingProvider loggingProvider;
 
 /** 
+ * A mutex used to control multi-threaded access to the logging provider.
+ */
+private shared ReadWriteMutex loggingProviderMutex;
+
+static this() {
+    loggingProviderMutex = new shared ReadWriteMutex();
+}
+
+/** 
  * Configures SLF4D to use the given logging provider. Call this once on
  * application startup.
  * Params:
  *   provider = The logging provider to use.
  */
 public void configureLoggingProvider(shared LoggingProvider provider) {
-    loggingProvider = provider;
+    synchronized(loggingProviderMutex.writer) {
+        loggingProvider = provider;
+    }
 }
 
 /** 
@@ -47,15 +59,14 @@ public void configureLoggingProvider(shared LoggingProvider provider) {
  * Returns: The logger factory.
  */
 public shared(LoggerFactory) getLoggerFactory() {
-    if (loggerFactory is null) {
+    synchronized(loggingProviderMutex.reader) {
         if (loggingProvider is null) {
-            import slf4d.default_provider;
-            loggerFactory = new shared DefaultProvider().defineLoggerFactory();
-        } else {
-            loggerFactory = loggingProvider.defineLoggerFactory();
+            synchronized(loggingProviderMutex.writer) {
+                loggingProvider = new shared DefaultProvider();
+            }
         }
+        return loggingProvider.getLoggerFactory();
     }
-    return loggerFactory;
 }
 
 /** 

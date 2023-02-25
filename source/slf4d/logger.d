@@ -224,7 +224,7 @@ struct Logger {
         auto handler = new shared CachingLogHandler();
         Logger log = Logger(handler, Levels.INFO);
         log.log(LogMessage(Levels.ERROR, "Oh no!", log.name, Clock.currTime(), LogMessageSourceContext()));
-        LogMessage lastMessage = handler.messages[0];
+        LogMessage lastMessage = handler.getMessages()[0];
         assert(lastMessage.level == Levels.ERROR);
         assert(lastMessage.message == "Oh no!");
     }
