@@ -52,7 +52,7 @@ void main() {
 
 ## Making a Custom Provider
 
-To create a logging provider, simply implement the `LoggingProvider` interface defined in `slf4d.provider`. Note that your logging factory and handler should be `shared`, that is, they will be shared among all threads of an application which uses your provider.
+To create a logging provider, simply implement the `LoggingProvider` interface defined in `slf4d.provider`. Note that your logging factory and handler should be `shared`, that is, they will be shared among all threads of an application which uses your provider. Consider using a mutex or `synchronized` in your handler or factory if it needs to access a shared resource.
 
 ## Why SLF4D?
 
