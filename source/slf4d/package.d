@@ -17,7 +17,6 @@ public import slf4d.level;
 import slf4d.provider;
 import slf4d.default_provider;
 import slf4d.noop_provider;
-import core.sync.rwmutex;
 
 /** 
  * The logger factory used to obtain new Loggers wherever SLF4D is used. This
