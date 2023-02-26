@@ -16,6 +16,7 @@ public import slf4d.level;
 
 import slf4d.provider;
 import slf4d.default_provider;
+import slf4d.noop_provider;
 import core.sync.rwmutex;
 
 /** 
@@ -32,22 +33,18 @@ private shared LoggerFactory loggerFactory;
 private shared LoggingProvider loggingProvider;
 
 /** 
- * A mutex used to control multi-threaded access to the logging provider.
- */
-private shared ReadWriteMutex loggingProviderMutex;
-
-static this() {
-    loggingProviderMutex = new shared ReadWriteMutex();
-}
-
-/** 
  * Configures SLF4D to use the given logging provider. Call this once on
- * application startup.
+ * application startup. In order to improve runtime performance, access to this
+ * provider is **not** synchronized, so attempts to reconfigure the logging
+ * provider after startup may lead to undefined behavior.
  * Params:
- *   provider = The logging provider to use.
+ *   provider = The logging provider to use. If `null` is given then SFL4D will
+ *              use its built-in `NoOpProvider` from `slf4d.noop_provider`.
  */
 public void configureLoggingProvider(shared LoggingProvider provider) {
-    synchronized(loggingProviderMutex.writer) {
+    if (provider is null) {
+        loggingProvider = new shared NoOpProvider();
+    } else {
         loggingProvider = provider;
     }
 }
@@ -59,14 +56,10 @@ public void configureLoggingProvider(shared LoggingProvider provider) {
  * Returns: The logger factory.
  */
 public shared(LoggerFactory) getLoggerFactory() {
-    synchronized(loggingProviderMutex.reader) {
-        if (loggingProvider is null) {
-            synchronized(loggingProviderMutex.writer) {
-                loggingProvider = new shared DefaultProvider();
-            }
-        }
-        return loggingProvider.getLoggerFactory();
+    if (loggingProvider is null) {
+        loggingProvider = new shared DefaultProvider();
     }
+    return loggingProvider.getLoggerFactory();
 }
 
 /** 
