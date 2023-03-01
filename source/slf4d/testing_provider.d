@@ -1,3 +1,8 @@
+/**
+ * An SLF4D provider that is intended to be used for testing. The provider
+ * class, `TestingLoggingProvider`, includes some convenience methods to
+ * inspect the log messages generated while it's active.
+ */
 module slf4d.testing_provider;
 
 import slf4d.factory;
@@ -15,7 +20,11 @@ class TestingLoggingProvider : LoggingProvider {
     /** 
      * The logger factory that this provider uses.
      */
-    public shared TestingLoggerFactory factory = new TestingLoggerFactory();
+    public shared TestingLoggerFactory factory;
+
+    public shared this() {
+        this.factory = new shared TestingLoggerFactory();
+    }
 
     public shared shared(TestingLoggerFactory) getLoggerFactory() {
         return this.factory;
@@ -43,8 +52,12 @@ class TestingLoggingProvider : LoggingProvider {
  * manner.
  */
 class TestingLoggerFactory : LoggerFactory {
-    public shared CachingLogHandler handler = new shared CachingLogHandler();
+    public shared CachingLogHandler handler;
     public Level logLevel = Levels.TRACE;
+
+    public shared this() {
+        this.handler = new shared CachingLogHandler();
+    }
 
     shared Logger getLogger(string name = __MODULE__) {
         return Logger(this.handler, this.logLevel, name);
