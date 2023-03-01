@@ -36,6 +36,18 @@ void main() {
 }
 ```
 
+## Logging Methods
+
+The following table gives a brief outline of the available logging methods provided by an SLF4D `Logger` struct obtained via `log = getLogger();`
+| Level | Basic | Formatted | Builder |
+|---    |---    |---        |---      |
+| TRACE | `log.trace("Message")` | `log.traceF!"Message %d"(42)` |
+| DEBUG | `log.debug_("Message")`* | `log.debugF!"Message %d"(42)` |
+| INFO | `log.info("Message")` | `log.infoF!"Message %d"(42)` |
+| WARN | `log.warn("Message")` | `log.warnF!"Message %d"(42)` |
+| ERROR | `log.error("Message")` | `log.errorF!"Message %d"(42)` |
+> \* Because `debug` is a keyword in D, `debug_` is used as the method name.
+
 ## Configuring the Provider
 
 By default, SLF4D uses a built-in logging provider that simply writes log messages to stdout and stderr. However, if you'd like to use a third-party logging provider instead, or create your own custom provider, all you need to do is call `configureLoggingProvider()` when your application starts, to set the shared logging provider to use.
@@ -47,6 +59,41 @@ import some_slf4d_provider;
 void main() {
     configureLoggingProvider(new shared CustomProvider());
     auto log = getLogger(); // Logger configured using provider.
+}
+```
+
+## Testing
+
+SLF4D is designed to be easy-to-use in unit testing, and it comes with a few purpose-built components to facilitate this.
+
+- The `slf4d.testing_provider` package defines a `TestingLoggingProvider` class that be used to help with recording any log messages that were sent to it.
+- Under the hood, it uses a `CachingLogHandler` from `slf4d.handler` which is a thread-safe handler for storing logged messages in memory for inspection.
+
+Here's an example.
+
+```d
+unittest {
+    import slf4d;
+    import slf4d.testing_provider;
+    // Setup SLF4D using our testing provider.
+    auto provider = new shared TestingLoggingProvider();
+    configureLoggingProvider(provider);
+
+    callMySystemUnderTest();
+
+    assert(provider.messages.length == 3);
+    assert(provider.messages[0].level == Levels.INFO);
+    assert(provider.messages[1].message == "Hello world!");
+
+    // Reset the testing provider to clear all log messages.
+    provider.reset();
+
+    callMyOtherSystemUnderTest();
+
+    // Check that there are no warn/error messages.
+    foreach (msg; provider.messages) {
+        assert(msg.level.value < Levels.WARN.value);
+    }
 }
 ```
 
