@@ -39,8 +39,8 @@ void main() {
 ## Logging Methods
 
 The following table gives a brief outline of the available logging methods provided by an SLF4D `Logger` struct obtained via `log = getLogger();`
-| Level | Basic | Formatted | Builder |
-|---    |---    |---        |---      |
+| Level | Basic | Formatted |
+|---    |---    |---        |
 | TRACE | `log.trace("Message")` | `log.traceF!"Message %d"(42)` |
 | DEBUG | `log.debug_("Message")`* | `log.debugF!"Message %d"(42)` |
 | INFO | `log.info("Message")` | `log.infoF!"Message %d"(42)` |
