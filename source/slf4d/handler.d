@@ -45,24 +45,51 @@ class DiscardingLogHandler : LogHandler {
  * array. This can be useful for testing.
  */
 synchronized class CachingLogHandler : LogHandler {
+    /** 
+     * The internal cache of messages.
+     */
     private shared LogMessage[] messages;
 
+    /** 
+     * "Handles" a log message by appending it to this handler's internal list
+     * of messages, for later inspection.
+     * Params:
+     *   msg = The message to handle.
+     */
     public shared void handle(LogMessage msg) {
         this.messages ~= msg;
     }
 
+    /** 
+     * Resets this handler's internal message cache to an empty list.
+     */
     public shared void reset() {
         this.messages = [];
     }
 
+    /** 
+     * Gets an immutable duplication of the list of messages this handler has
+     * handled since the last `reset()` call.
+     * Returns: The list of messages.
+     */
     public shared LogMessage[] getMessages() {
         return cast(LogMessage[]) messages.idup;
     }
 
+    /** 
+     * Gets the number of messages that this handler has handled since the last
+     * `reset()` call.
+     * Returns: The number of messages.
+     */
     public shared size_t messageCount() {
         return messages.length;
     }
 
+    /** 
+     * Determines if no messages have been logged since the last time `reset()`
+     * was called.
+     * Returns: True if there are no messages, or false otherwise.
+     */
     public shared bool empty() {
         return messages.length == 0;
     }
@@ -86,15 +113,33 @@ unittest {
 class MultiLogHandler : LogHandler {
     private shared LogHandler[] handlers;
 
+    /** 
+     * Constructs this multi-log handler using the given list of sub-handlers.
+     * Params:
+     *   handlers = The handlers that should each handle every message this
+     *              multi-handler receives.
+     */
     public shared this(shared LogHandler[] handlers) {
         this.handlers = handlers;
     }
 
+    /** 
+     * Adds a handler to this multi-handler's list of handlers.
+     * Params:
+     *   handler = The handler to add.
+     * Returns: A reference to this multi-handler.
+     */
     public shared shared(MultiLogHandler) addHandler(shared LogHandler handler) {
         this.handlers ~= handler;
         return this;
     }
 
+    /** 
+     * Handles a log message by calling each of its sub-handlers' `handle`
+     * methods on it.
+     * Params:
+     *   msg = The message to handle.
+     */
     public shared void handle(LogMessage msg) {
         foreach (handler; handlers) {
             handler.handle(msg);

@@ -43,7 +43,7 @@ class TestingLoggingProvider : LoggingProvider {
  * manner.
  */
 class TestingLoggerFactory : LoggerFactory {
-    public shared CachingLogHandler handler;
+    public shared CachingLogHandler handler = new shared CachingLogHandler();
     public Level logLevel = Levels.TRACE;
 
     shared Logger getLogger(string name = __MODULE__) {
@@ -54,7 +54,7 @@ class TestingLoggerFactory : LoggerFactory {
 unittest {
     import slf4d;
 
-    TestingLoggingProvider p = new shared TestingLoggingProvider();
+    auto p = new shared TestingLoggingProvider();
     assert(p.messages.length == 0);
     configureLoggingProvider(p);
 
