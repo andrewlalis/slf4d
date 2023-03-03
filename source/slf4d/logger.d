@@ -79,14 +79,16 @@ struct Logger {
         Level level,
         string msg,
         string moduleName = __MODULE__,
-        string functionName = __PRETTY_FUNCTION__
+        string functionName = __PRETTY_FUNCTION__,
+        string fileName = __FILE__,
+        size_t lineNumber = __LINE__
     ) {
         this.log(LogMessage(
             level,
             msg,
             this.name,
             Clock.currTime(),
-            LogMessageSourceContext(moduleName, functionName)
+            LogMessageSourceContext(moduleName, functionName, fileName, lineNumber)
         ));
     }
 
@@ -104,10 +106,12 @@ struct Logger {
         Level level,
         T args,
         string moduleName = __MODULE__,
-        string functionName = __PRETTY_FUNCTION__
+        string functionName = __PRETTY_FUNCTION__,
+        string fileName = __FILE__,
+        size_t lineNumber = __LINE__
     ) {
         import std.format;
-        this.log(level, format!(fmt)(args), moduleName, functionName);
+        this.log(level, format!(fmt)(args), moduleName, functionName, fileName, lineNumber);
     }
 
     // TRACE functions
@@ -119,17 +123,21 @@ struct Logger {
     public void trace(
         string msg,
         string moduleName = __MODULE__,
-        string functionName = __PRETTY_FUNCTION__
+        string functionName = __PRETTY_FUNCTION__,
+        string fileName = __FILE__,
+        size_t lineNumber = __LINE__
     ) {
-        this.log(Levels.TRACE, msg, moduleName, functionName);
+        this.log(Levels.TRACE, msg, moduleName, functionName, fileName, lineNumber);
     }
 
     public void traceF(string fmt, T...)(
         T args,
         string moduleName = __MODULE__,
-        string functionName = __PRETTY_FUNCTION__
+        string functionName = __PRETTY_FUNCTION__,
+        string fileName = __FILE__,
+        size_t lineNumber = __LINE__
     ) {
-        this.logF!(fmt, T)(Levels.TRACE, args, moduleName, functionName);
+        this.logF!(fmt, T)(Levels.TRACE, args, moduleName, functionName, fileName, lineNumber);
     }
 
     // DEBUG functions
@@ -141,17 +149,21 @@ struct Logger {
     public void debug_(
         string msg,
         string moduleName = __MODULE__,
-        string functionName = __PRETTY_FUNCTION__
+        string functionName = __PRETTY_FUNCTION__,
+        string fileName = __FILE__,
+        size_t lineNumber = __LINE__
     ) {
-        this.log(Levels.DEBUG, msg, moduleName, functionName);
+        this.log(Levels.DEBUG, msg, moduleName, functionName, fileName, lineNumber);
     }
 
     public void debugF(string fmt, T...)(
         T args,
         string moduleName = __MODULE__,
-        string functionName = __PRETTY_FUNCTION__
+        string functionName = __PRETTY_FUNCTION__,
+        string fileName = __FILE__,
+        size_t lineNumber = __LINE__
     ) {
-        this.logF!(fmt, T)(Levels.DEBUG, args, moduleName, functionName);
+        this.logF!(fmt, T)(Levels.DEBUG, args, moduleName, functionName, fileName, lineNumber);
     }
 
     // INFO functions
@@ -163,17 +175,21 @@ struct Logger {
     public void info(
         string msg,
         string moduleName = __MODULE__,
-        string functionName = __PRETTY_FUNCTION__
+        string functionName = __PRETTY_FUNCTION__,
+        string fileName = __FILE__,
+        size_t lineNumber = __LINE__
     ) {
-        this.log(Levels.INFO, msg, moduleName, functionName);
+        this.log(Levels.INFO, msg, moduleName, functionName, fileName, lineNumber);
     }
 
     public void infoF(string fmt, T...)(
         T args,
         string moduleName = __MODULE__,
-        string functionName = __PRETTY_FUNCTION__
+        string functionName = __PRETTY_FUNCTION__,
+        string fileName = __FILE__,
+        size_t lineNumber = __LINE__
     ) {
-        this.logF!(fmt, T)(Levels.INFO, args, moduleName, functionName);
+        this.logF!(fmt, T)(Levels.INFO, args, moduleName, functionName, fileName, lineNumber);
     }
 
     // WARN functions
@@ -185,17 +201,21 @@ struct Logger {
     public void warn(
         string msg,
         string moduleName = __MODULE__,
-        string functionName = __PRETTY_FUNCTION__
+        string functionName = __PRETTY_FUNCTION__,
+        string fileName = __FILE__,
+        size_t lineNumber = __LINE__
     ) {
-        this.log(Levels.WARN, msg, moduleName, functionName);
+        this.log(Levels.WARN, msg, moduleName, functionName, fileName, lineNumber);
     }
 
     public void warnF(string fmt, T...)(
         T args,
         string moduleName = __MODULE__,
-        string functionName = __PRETTY_FUNCTION__
+        string functionName = __PRETTY_FUNCTION__,
+        string fileName = __FILE__,
+        size_t lineNumber = __LINE__
     ) {
-        this.logF!(fmt, T)(Levels.WARN, args, moduleName, functionName);
+        this.logF!(fmt, T)(Levels.WARN, args, moduleName, functionName, fileName, lineNumber);
     }
 
     // ERROR functions
@@ -207,17 +227,21 @@ struct Logger {
     public void error(
         string msg,
         string moduleName = __MODULE__,
-        string functionName = __PRETTY_FUNCTION__
+        string functionName = __PRETTY_FUNCTION__,
+        string fileName = __FILE__,
+        size_t lineNumber = __LINE__
     ) {
-        this.log(Levels.ERROR, msg, moduleName, functionName);
+        this.log(Levels.ERROR, msg, moduleName, functionName, fileName, lineNumber);
     }
 
     public void errorF(string fmt, T...)(
         T args,
         string moduleName = __MODULE__,
-        string functionName = __PRETTY_FUNCTION__
+        string functionName = __PRETTY_FUNCTION__,
+        string fileName = __FILE__,
+        size_t lineNumber = __LINE__
     ) {
-        this.logF!(fmt, T)(Levels.ERROR, args, moduleName, functionName);
+        this.logF!(fmt, T)(Levels.ERROR, args, moduleName, functionName, fileName, lineNumber);
     }
 
     unittest {
@@ -275,6 +299,16 @@ struct LogMessageSourceContext {
      * The name of the function that the message was generated from.
      */
     public const string functionName;
+
+    /** 
+     * The name of the file that the message was generated from.
+     */
+    public const string fileName;
+
+    /** 
+     * The line number in the file where this message was generated.
+     */
+    public const size_t lineNumber;
 }
 
 /** 
@@ -327,7 +361,12 @@ struct LogBuilder {
      *   functionName = The name of the function. This will resolve to the
      *                current function name by default.
      */
-    public void log(string moduleName = __MODULE__, string functionName = __PRETTY_FUNCTION__) {
+    public void log(
+        string moduleName = __MODULE__,
+        string functionName = __PRETTY_FUNCTION__,
+        string fileName = __FILE__,
+        size_t lineNumber = __LINE__
+    ) {
         logger.log(LogMessage(
             this.level,
             this.message,
@@ -335,7 +374,9 @@ struct LogBuilder {
             Clock.currTime(),
             LogMessageSourceContext(
                 moduleName,
-                functionName
+                functionName,
+                fileName,
+                lineNumber
             )
         ));
     }
