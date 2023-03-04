@@ -31,15 +31,20 @@ class DefaultLogHandler : LogHandler {
      * Params:
      *   msg = The message that was produced.
      */
-    public shared void handle(LogMessage msg) {
+    public shared void handle(immutable LogMessage msg) {
         import std.stdio;
 
-        string logStr = format!"%s %s %s %s"(
+        string prefixStr = format!"%s %s %s"(
             formatLoggerName(msg.loggerName, this.colored),
             formatLogLevel(msg.level, this.colored),
-            formatTimestamp(msg.timestamp, this.colored),
-            msg.message
+            formatTimestamp(msg.timestamp, this.colored)
         );
+
+        string logStr = prefixStr ~ " " ~ msg.message;
+        if (!msg.exception.isNull) {
+            ExceptionInfo info = msg.exception.get();
+            logStr ~= "\n" ~ formatExceptionInfo(info, this.colored);
+        }
 
         if (msg.level.value >= Levels.ERROR.value) {
             stderr.writeln(logStr);
@@ -113,16 +118,46 @@ class DefaultLogHandler : LogHandler {
         }
         return cast(string) padRight(name, ' ', loggerNameLength + (name.length - originalNameLength)).array;
     }
+
+    private static string formatExceptionInfo(ExceptionInfo info, bool colored) {
+        string exceptionName = info.exceptionClassName;
+        if (colored) {
+            exceptionName = "\033[31;1m" ~ exceptionName ~ "\033[0m";
+        }
+        string sourceLocation = format!"%s:%d"(info.sourceFileName, info.sourceLineNumber);
+        if (colored) {
+            sourceLocation = "\033[97;4m" ~ sourceLocation ~ "\033[0m";
+        }
+        string titleMessage = format!"%s thrown in %s: %s"(
+            exceptionName, sourceLocation, info.message
+        );
+        if (!info.stackTrace.isNull) {
+            string traceStr = info.stackTrace.get();
+            if (colored) {
+                traceStr = "\033[31m" ~ traceStr ~ "\033[0m";
+            }
+            titleMessage ~= "\n" ~ traceStr;
+        }
+
+        return titleMessage;
+    }
 }
 
 unittest {
     import slf4d.default_provider.provider;
     auto factory = new shared DefaultProvider().getLoggerFactory();
     factory.setRootLevel(Levels.TRACE);
-    auto log = factory.getLogger();
+    Logger log = factory.getLogger();
     log.error("Testing default provider error message.");
     log.warn("Testing default provider warn message.");
     log.info("Testing default provider info message.");
     log.debug_("Testing default provider debug message.");
     log.trace("Testing default provider trace message.");
+    log.traceF!"Testing default provider traceF message. %d"(42);
+
+    try {
+        throw new Exception("Oh no!");
+    } catch (Exception e) {
+        log.error(e);
+    }
 }

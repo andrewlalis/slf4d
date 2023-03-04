@@ -48,6 +48,38 @@ The following table gives a brief outline of the available logging methods provi
 | ERROR | `log.error("Message")` | `log.errorF!"Message %d"(42)` |
 > \* Because `debug` is a keyword in D, `debug_` is used as the method name.
 
+Each **basic** function also accepts an Exception as an argument:
+```d
+try {
+    doSomethingDangerous();
+} catch (Exception e) {
+    log.warn("Uh oh, something went wrong.", e);
+    // Or let SLF4D derive the message from the exception:
+    log.error(e);
+}
+```
+
+### Builders
+
+In addition to the log methods described above, the Logger also provides a set of _builder_ methods that give you a `LogBuilder` with a fluent interface for building log messages.
+
+| Level | Method |
+|---    |---     |
+| TRACE | `log.traceBuilder()` |
+| DEBUG | `log.debugBuilder()` |
+| INFO | `log.infoBuilder()` |
+| WARN | `log.warnBuilder()` |
+| ERROR | `log.errorBuilder()` |
+
+Here's an example of how a builder can be used:
+```d
+auto log = getLogger();
+log.warnBuilder()
+    .msg("This is a warning message.")
+    .exc(new Exception("Oh no!"))
+    .log();
+```
+
 ## Configuring the Provider
 
 By default, SLF4D uses a built-in logging provider that simply writes log messages to stdout and stderr. However, if you'd like to use a third-party logging provider instead, or create your own custom provider, all you need to do is call `configureLoggingProvider()` when your application starts, to set the shared logging provider to use.

@@ -12,6 +12,16 @@ import slf4d.default_provider.handler;
  */
 class DefaultProvider : LoggingProvider {
     private shared DefaultLoggerFactory loggerFactory;
+    private shared DefaultLogHandler handler;
+
+    /** 
+     * Constructs the default provider.
+     * Params:
+     *   colored = Whether to color output.
+     */
+    public shared this(bool colored = true) {
+        this.handler = new shared DefaultLogHandler(colored);
+    }
     
     /** 
      * Getter method to get this provider's internal factory. It will lazily
@@ -20,7 +30,7 @@ class DefaultProvider : LoggingProvider {
      */
     public shared shared(DefaultLoggerFactory) getLoggerFactory() {
         if (loggerFactory is null) {
-            loggerFactory = new shared DefaultLoggerFactory(new shared DefaultLogHandler());
+            loggerFactory = new shared DefaultLoggerFactory(this.handler);
         }
         return loggerFactory;
     }

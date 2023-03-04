@@ -6,7 +6,8 @@ module slf4d.logger;
 
 import slf4d.level;
 import slf4d.handler;
-import std.datetime;
+import std.datetime : Clock, SysTime;
+import std.typecons : Nullable, nullable;
 
 /** 
  * The logger is the core component of SLF4D. Use it to generate log messages
@@ -59,10 +60,42 @@ struct Logger {
      * Params:
      *   msg = The message to log.
      */
-    public void log(LogMessage msg) {
+    public void log(immutable LogMessage msg) {
         if (this.level.value <= msg.level.value) {
             this.handler.handle(msg);
         }
+    }
+
+    // Test the basic `log` method to ensure log messages are filtered according to the Logger's level.
+    unittest {
+        auto handler = new shared CachingLogHandler();
+        Logger log = Logger(handler, Levels.INFO);
+
+        // Test logging something that's of a sufficient level.
+        LogMessage errorMessage = LogMessage(
+            Levels.ERROR,
+            "Oh no!",
+            log.name,
+            Clock.currTime(),
+            ExceptionInfo.from(new Exception("Oh no!")),
+            LogMessageSourceContext()
+        );
+        log.log(errorMessage);
+        LogMessage lastMessage = handler.getMessages()[0];
+        assert(lastMessage == errorMessage);
+        handler.reset();
+
+        // Test logging something that's not of a sufficient level, and should not show up.
+        LogMessage traceMessage = LogMessage(
+            Levels.TRACE,
+            "Trace message",
+            log.name,
+            Clock.currTime(),
+            ExceptionInfo.from(null),
+            LogMessageSourceContext()
+        );
+        log.log(traceMessage);
+        assert(handler.empty);
     }
 
     /** 
@@ -70,14 +103,20 @@ struct Logger {
      * Params:
      *   level = The log level.
      *   msg = The string message to log.
+     *   exception = The exception that prompted this log. This may be null.
      *   moduleName = The name of the module. This will resolve to the current
      *                module name by default.
      *   functionName = The name of the function. This will resolve to the
      *                current function name by default.
+     *   fileName = The name of the source file. This will resolve to the
+     *              current source file by default.
+     *   lineNumber = The line number in the source file. This will resolve to
+     *                the current source file's line number by default.
      */
     public void log(
         Level level,
         string msg,
+        Exception exception = null,
         string moduleName = __MODULE__,
         string functionName = __PRETTY_FUNCTION__,
         string fileName = __FILE__,
@@ -88,6 +127,7 @@ struct Logger {
             msg,
             this.name,
             Clock.currTime(),
+            ExceptionInfo.from(exception),
             LogMessageSourceContext(moduleName, functionName, fileName, lineNumber)
         ));
     }
@@ -97,160 +137,100 @@ struct Logger {
      * Params:
      *   level = The log level.
      *   args = The arguments for the formatted string.
+     *   exception = The exception that prompted this log. This may be null.
      *   moduleName = The name of the module. This will resolve to the current
      *                module name by default.
      *   functionName = The name of the function. This will resolve to the
      *                current function name by default.
+     *   fileName = The name of the source file. This will resolve to the
+     *              current source file by default.
+     *   lineNumber = The line number in the source file. This will resolve to
+     *                the current source file's line number by default.
      */
     public void logF(string fmt, T...)(
         Level level,
         T args,
+        Exception exception = null,
         string moduleName = __MODULE__,
         string functionName = __PRETTY_FUNCTION__,
         string fileName = __FILE__,
         size_t lineNumber = __LINE__
     ) {
+        if (this.level.value <= level.value) {
+            import std.format : format;
+            this.log(level, format!(fmt)(args), exception, moduleName, functionName, fileName, lineNumber);
+        }
+    }
+
+    // Compile-time definitions of the various log functions that this Logger provides.
+
+    private static struct LogFunction {
+        string level;
+        string name;
+        string fName;
+        string builderName;
+    }
+
+    private static immutable LogFunctions = [
+        LogFunction("Levels.TRACE", "trace", "traceF", "traceBuilder"),
+        LogFunction("Levels.DEBUG", "debug_", "debugF", "debugBuilder"),
+        LogFunction("Levels.INFO", "info", "infoF", "infoBuilder"),
+        LogFunction("Levels.WARN", "warn", "warnF", "warnBuilder"),
+        LogFunction("Levels.ERROR", "error", "errorF", "errorBuilder")
+    ];
+
+    // Generate each of the functions defined below, for each LogFunction defined.
+    static foreach (lf; LogFunctions) {
         import std.format;
-        this.log(level, format!(fmt)(args), moduleName, functionName, fileName, lineNumber);
-    }
 
-    // TRACE functions
+        // Generate the basic log function.
+        mixin(q{
+            public void %s(
+                string msg,
+                Exception exception = null,
+                string moduleName = __MODULE__,
+                string functionName = __PRETTY_FUNCTION__,
+                string fileName = __FILE__,
+                size_t lineNumber = __LINE__
+            ) {
+                this.log(%s, msg, exception, moduleName, functionName, fileName, lineNumber);
+            }
+        }.format(lf.name, lf.level));
 
-    public LogBuilder traceBuilder() {
-        return LogBuilder.forLogger(this).lvl(Levels.TRACE);
-    }
+        // Generate log function that takes an exception without a message.
+        mixin(q{
+            public void %s(
+                Exception exception,
+                string moduleName = __MODULE__,
+                string functionName = __PRETTY_FUNCTION__,
+                string fileName = __FILE__,
+                size_t lineNumber = __LINE__
+            ) {
+                string message = exception.classinfo.name ~ ": " ~ exception.msg;
+                this.log(%s, message, exception, moduleName, functionName, fileName, lineNumber);
+            }
+        }.format(lf.name, lf.level));
 
-    public void trace(
-        string msg,
-        string moduleName = __MODULE__,
-        string functionName = __PRETTY_FUNCTION__,
-        string fileName = __FILE__,
-        size_t lineNumber = __LINE__
-    ) {
-        this.log(Levels.TRACE, msg, moduleName, functionName, fileName, lineNumber);
-    }
+        // Generate the logF function.
+        mixin(q{
+            public void %s(string fmt, T...)(
+                T args,
+                Exception exception = null,
+                string moduleName = __MODULE__,
+                string functionName = __PRETTY_FUNCTION__,
+                string fileName = __FILE__,
+                size_t lineNumber = __LINE__
+            ) {
+                this.logF!(fmt, T)(%s, args, exception, moduleName, functionName, fileName, lineNumber);
+            }
+        }.format(lf.fName, lf.level));
 
-    public void traceF(string fmt, T...)(
-        T args,
-        string moduleName = __MODULE__,
-        string functionName = __PRETTY_FUNCTION__,
-        string fileName = __FILE__,
-        size_t lineNumber = __LINE__
-    ) {
-        this.logF!(fmt, T)(Levels.TRACE, args, moduleName, functionName, fileName, lineNumber);
-    }
-
-    // DEBUG functions
-
-    public LogBuilder debugBuilder() {
-        return LogBuilder.forLogger(this).lvl(Levels.DEBUG);
-    }
-
-    public void debug_(
-        string msg,
-        string moduleName = __MODULE__,
-        string functionName = __PRETTY_FUNCTION__,
-        string fileName = __FILE__,
-        size_t lineNumber = __LINE__
-    ) {
-        this.log(Levels.DEBUG, msg, moduleName, functionName, fileName, lineNumber);
-    }
-
-    public void debugF(string fmt, T...)(
-        T args,
-        string moduleName = __MODULE__,
-        string functionName = __PRETTY_FUNCTION__,
-        string fileName = __FILE__,
-        size_t lineNumber = __LINE__
-    ) {
-        this.logF!(fmt, T)(Levels.DEBUG, args, moduleName, functionName, fileName, lineNumber);
-    }
-
-    // INFO functions
-
-    public LogBuilder infoBuilder() {
-        return LogBuilder.forLogger(this).lvl(Levels.INFO);
-    }
-
-    public void info(
-        string msg,
-        string moduleName = __MODULE__,
-        string functionName = __PRETTY_FUNCTION__,
-        string fileName = __FILE__,
-        size_t lineNumber = __LINE__
-    ) {
-        this.log(Levels.INFO, msg, moduleName, functionName, fileName, lineNumber);
-    }
-
-    public void infoF(string fmt, T...)(
-        T args,
-        string moduleName = __MODULE__,
-        string functionName = __PRETTY_FUNCTION__,
-        string fileName = __FILE__,
-        size_t lineNumber = __LINE__
-    ) {
-        this.logF!(fmt, T)(Levels.INFO, args, moduleName, functionName, fileName, lineNumber);
-    }
-
-    // WARN functions
-
-    public LogBuilder warnBuilder() {
-        return LogBuilder.forLogger(this).lvl(Levels.WARN);
-    }
-
-    public void warn(
-        string msg,
-        string moduleName = __MODULE__,
-        string functionName = __PRETTY_FUNCTION__,
-        string fileName = __FILE__,
-        size_t lineNumber = __LINE__
-    ) {
-        this.log(Levels.WARN, msg, moduleName, functionName, fileName, lineNumber);
-    }
-
-    public void warnF(string fmt, T...)(
-        T args,
-        string moduleName = __MODULE__,
-        string functionName = __PRETTY_FUNCTION__,
-        string fileName = __FILE__,
-        size_t lineNumber = __LINE__
-    ) {
-        this.logF!(fmt, T)(Levels.WARN, args, moduleName, functionName, fileName, lineNumber);
-    }
-
-    // ERROR functions
-
-    public LogBuilder errorBuilder() {
-        return LogBuilder.forLogger(this).lvl(Levels.ERROR);
-    }
-
-    public void error(
-        string msg,
-        string moduleName = __MODULE__,
-        string functionName = __PRETTY_FUNCTION__,
-        string fileName = __FILE__,
-        size_t lineNumber = __LINE__
-    ) {
-        this.log(Levels.ERROR, msg, moduleName, functionName, fileName, lineNumber);
-    }
-
-    public void errorF(string fmt, T...)(
-        T args,
-        string moduleName = __MODULE__,
-        string functionName = __PRETTY_FUNCTION__,
-        string fileName = __FILE__,
-        size_t lineNumber = __LINE__
-    ) {
-        this.logF!(fmt, T)(Levels.ERROR, args, moduleName, functionName, fileName, lineNumber);
-    }
-
-    unittest {
-        auto handler = new shared CachingLogHandler();
-        Logger log = Logger(handler, Levels.INFO);
-        log.log(LogMessage(Levels.ERROR, "Oh no!", log.name, Clock.currTime(), LogMessageSourceContext()));
-        LogMessage lastMessage = handler.getMessages()[0];
-        assert(lastMessage.level == Levels.ERROR);
-        assert(lastMessage.message == "Oh no!");
+        // Generate builder function.
+        mixin(q{
+            public LogBuilder %sBuilder() {
+                return LogBuilder.forLogger(this).lvl(%s);
+            }
+        }.format(lf.builderName, lf.level));
     }
 }
 
@@ -261,28 +241,33 @@ struct LogMessage {
     /** 
      * The log level for this message. This is an indication of the severity.
      */
-    public const Level level;
+    public immutable Level level;
 
     /** 
      * The actual content of the log message.
      */
-    public const string message;
+    public immutable string message;
 
     /** 
      * The name of the logger that produced this log message.
      */
-    public const string loggerName;
+    public immutable string loggerName;
 
     /** 
      * The time at which this message occurred.
      */
-    public const SysTime timestamp;
+    public immutable SysTime timestamp;
+
+    /** 
+     * The exception (if any) that was thrown when this message was logged.
+     */
+    public immutable Nullable!ExceptionInfo exception;
 
     /** 
      * Additional context about where this log message was generated in the
      * program's source.
      */
-    public const LogMessageSourceContext sourceContext;
+    public immutable LogMessageSourceContext sourceContext;
 }
 
 /** 
@@ -293,22 +278,81 @@ struct LogMessageSourceContext {
     /** 
      * The name of the D module that the log message was generated from.
      */
-    public const string moduleName;
+    public immutable string moduleName;
 
     /** 
      * The name of the function that the message was generated from.
      */
-    public const string functionName;
+    public immutable string functionName;
 
     /** 
      * The name of the file that the message was generated from.
      */
-    public const string fileName;
+    public immutable string fileName;
 
     /** 
      * The line number in the file where this message was generated.
      */
-    public const size_t lineNumber;
+    public immutable size_t lineNumber;
+}
+
+/** 
+ * Container for information about an exception that was logged.
+ */
+struct ExceptionInfo {
+    /** 
+     * The exception's message.
+     */
+    public immutable string message;
+
+    /** 
+     * The source file in which the exception occurred.
+     */
+    public immutable string sourceFileName;
+
+    /** 
+     * The line number at which the exception occurred.
+     */
+    public immutable size_t sourceLineNumber;
+
+    /** 
+     * The name of the exception class that was thrown.
+     */
+    public immutable string exceptionClassName;
+
+    /** 
+     * The stack trace for the exception, if it's available.
+     */
+    public immutable Nullable!string stackTrace;
+
+    /** 
+     * Constructs a nullable ExceptionInfo from an Exception object.
+     * Params:
+     *   e = The exception.
+     * Returns: A nullable ExceptionInfo.
+     */
+    public static Nullable!ExceptionInfo from(Exception e) {
+        if (e is null) return Nullable!ExceptionInfo.init;
+
+        Nullable!string st;
+        if (e.info !is null) {
+            st = e.info.toString();
+        }
+        return ExceptionInfo(e.msg, e.file, e.line, e.classinfo.name, st).nullable;
+    }
+
+    unittest {
+        assert(ExceptionInfo.from(null).isNull);
+
+        try {
+            throw new Exception("Oh no!");
+        } catch (Exception e) {
+            auto info = ExceptionInfo.from(e);
+            assert(!info.isNull);
+            assert(info.get.message == "Oh no!");
+            assert(info.get.exceptionClassName == "object.Exception");
+        }
+    }
 }
 
 /** 
@@ -318,6 +362,7 @@ struct LogBuilder {
     private Level level;
     private string message;
     private Logger logger;
+    private Exception exception;
 
     /** 
      * Creates a log builder for the given logger.
@@ -352,6 +397,17 @@ struct LogBuilder {
     }
 
     /** 
+     * Sets the exception of the log.
+     * Params:
+     *   exception = The exception to set.
+     * Returns: A reference to the builder.
+     */
+    public ref LogBuilder exc(Exception exception) return {
+        this.exception = exception;
+        return this;
+    }
+
+    /** 
      * Builds the log message and adds it to the logger associated with this
      * builder, and adds source context information using default function
      * arguments.
@@ -360,6 +416,10 @@ struct LogBuilder {
      *                module name by default.
      *   functionName = The name of the function. This will resolve to the
      *                current function name by default.
+     *   fileName = The name of the source file. This will resolve to the
+     *              current source file by default.
+     *   lineNumber = The line number in the source file. This will resolve to
+     *                the current source file's line number by default.
      */
     public void log(
         string moduleName = __MODULE__,
@@ -372,6 +432,7 @@ struct LogBuilder {
             this.message,
             this.logger.name,
             Clock.currTime(),
+            ExceptionInfo.from(this.exception),
             LogMessageSourceContext(
                 moduleName,
                 functionName,

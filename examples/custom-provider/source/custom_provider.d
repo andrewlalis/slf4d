@@ -13,7 +13,7 @@ class CustomProvider : LoggingProvider {
 }
 
 class CustomLogHandler : LogHandler {
-    shared void handle(LogMessage msg) {
+    shared void handle(immutable LogMessage msg) {
         import std.stdio;
         writeln(msg.level.name ~ ": " ~ msg.message);
     }

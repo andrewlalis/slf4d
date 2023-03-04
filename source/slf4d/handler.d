@@ -28,14 +28,14 @@ shared interface LogHandler {
      * Params:
      *   msg = The log message that was generated.
      */
-    shared void handle(LogMessage msg);
+    shared void handle(immutable LogMessage msg);
 }
 
 /**
  * A log handler that discards all messages. Useful for testing.
  */
 class DiscardingLogHandler : LogHandler {
-    public shared void handle(LogMessage msg) {
+    public shared void handle(immutable LogMessage msg) {
         // Do nothing.
     }
 }
@@ -56,7 +56,7 @@ synchronized class CachingLogHandler : LogHandler {
      * Params:
      *   msg = The message to handle.
      */
-    public shared void handle(LogMessage msg) {
+    public shared void handle(immutable LogMessage msg) {
         this.messages ~= msg;
     }
 
@@ -140,7 +140,7 @@ class MultiLogHandler : LogHandler {
      * Params:
      *   msg = The message to handle.
      */
-    public shared void handle(LogMessage msg) {
+    public shared void handle(immutable LogMessage msg) {
         foreach (handler; handlers) {
             handler.handle(msg);
         }
@@ -171,7 +171,7 @@ class FilterLogHandler : LogHandler {
         this.filterFunction = filterFunction;
     }
 
-    shared void handle(LogMessage msg) {
+    shared void handle(immutable LogMessage msg) {
         if (this.filterFunction(msg)) {
             this.handler.handle(msg);
         }
@@ -261,7 +261,7 @@ class LevelMappedLogHandler : LogHandler {
         this.mappings ~= Mapping(LevelRange.infinite, handler);
     }
 
-    public shared void handle(LogMessage msg) {
+    public shared void handle(immutable LogMessage msg) {
         foreach (mapping; mappings) {
             if (
                 (!mapping.range.hasMinValue || msg.level.value >= mapping.range.minValue) &&
