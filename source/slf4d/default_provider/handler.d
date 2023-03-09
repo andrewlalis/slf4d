@@ -95,7 +95,7 @@ class DefaultLogHandler : LogHandler {
             }
             s = colorStr ~ s ~ "\033[0m";
         }
-        return cast(string) padLeft(s, ' ', 6 + (s.length - originalLength)).array;
+        return cast(string) padLeft(s, ' ', 5 + (s.length - originalLength)).array;
     }
 
     /** 
@@ -107,16 +107,32 @@ class DefaultLogHandler : LogHandler {
      * Returns: The formatted logger name string.
      */
     private static string formatLoggerName(string name, bool colored) {
-        const size_t loggerNameLength = 40;
-        
+        const size_t loggerNameLength = 24;
+
+        name = compactLoggerName(name, loggerNameLength);
         const size_t originalNameLength = name.length;
-        if (name.length > loggerNameLength) {
-            name = name[0 .. loggerNameLength - 3] ~ "...";
-        }
+        
         if (colored) {
             name = "\033[33m" ~ name ~ "\033[0m";
         }
         return cast(string) padRight(name, ' ', loggerNameLength + (name.length - originalNameLength)).array;
+    }
+
+    private static string compactLoggerName(string name, size_t maxLength) {
+        if (name.length <= maxLength) return name;
+
+        string[] segments = name.split(".");
+        
+        if (segments.length == 1) {
+            return segments[0][0 .. maxLength - 3] ~ "...";
+        }
+
+        return name;
+    }
+
+    unittest {
+        assert(compactLoggerName("test", 24) == "test");
+        assert(compactLoggerName("testing", 4) == "t...");
     }
 
     private static string formatExceptionInfo(ExceptionInfo info, bool colored) {
@@ -154,6 +170,7 @@ unittest {
     log.debug_("Testing default provider debug message.");
     log.trace("Testing default provider trace message.");
     log.traceF!"Testing default provider traceF message. %d"(42);
+    log.info("ATTENTION! An exception and its stack trace will be shown. THIS IS EXPECTED.");
 
     try {
         throw new Exception("Oh no!");

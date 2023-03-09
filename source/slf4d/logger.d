@@ -189,11 +189,188 @@ struct Logger {
         }
     }
 
-    // Compile-time definitions of the various log functions that this Logger provides.
-    import slf4d.log_functions : LogFunctionsMixin;
-    mixin LogFunctionsMixin;
 
-    // General test for all compile-time-generated functions.
+    public void trace(
+        string msg,
+        Exception exception = null,
+        string moduleName = __MODULE__,
+        string functionName = __PRETTY_FUNCTION__,
+        string fileName = __FILE__,
+        size_t lineNumber = __LINE__
+    ) {
+        this.log(Levels.TRACE, msg, exception, moduleName, functionName, fileName, lineNumber);
+    }
+
+    public void trace(
+        Exception exception,
+        string moduleName = __MODULE__,
+        string functionName = __PRETTY_FUNCTION__,
+        string fileName = __FILE__,
+        size_t lineNumber = __LINE__
+    ) {
+        this.log(Levels.TRACE, exception, moduleName, functionName, fileName, lineNumber);
+    }
+
+    public void traceF(string fmt, T...)(
+        T args,
+        Exception exception = null,
+        string moduleName = __MODULE__,
+        string functionName = __PRETTY_FUNCTION__,
+        string fileName = __FILE__,
+        size_t lineNumber = __LINE__
+    ) {
+        this.logF!(fmt, T)(Levels.TRACE, args, exception, moduleName, functionName, fileName, lineNumber);
+    }
+
+    public LogBuilder traceBuilder() {
+        return LogBuilder.forLogger(this).lvl(Levels.TRACE);
+    }
+
+    public void debug_(
+        string msg,
+        Exception exception = null,
+        string moduleName = __MODULE__,
+        string functionName = __PRETTY_FUNCTION__,
+        string fileName = __FILE__,
+        size_t lineNumber = __LINE__
+    ) {
+        this.log(Levels.DEBUG, msg, exception, moduleName, functionName, fileName, lineNumber);
+    }
+
+    public void debug_(
+        Exception exception,
+        string moduleName = __MODULE__,
+        string functionName = __PRETTY_FUNCTION__,
+        string fileName = __FILE__,
+        size_t lineNumber = __LINE__
+    ) {
+        this.log(Levels.DEBUG, exception, moduleName, functionName, fileName, lineNumber);
+    }
+
+    public void debugF(string fmt, T...)(
+        T args,
+        Exception exception = null,
+        string moduleName = __MODULE__,
+        string functionName = __PRETTY_FUNCTION__,
+        string fileName = __FILE__,
+        size_t lineNumber = __LINE__
+    ) {
+        this.logF!(fmt, T)(Levels.DEBUG, args, exception, moduleName, functionName, fileName, lineNumber);
+    }
+
+    public LogBuilder debugBuilder() {
+        return LogBuilder.forLogger(this).lvl(Levels.DEBUG);
+    }
+
+    public void info(
+        string msg,
+        Exception exception = null,
+        string moduleName = __MODULE__,
+        string functionName = __PRETTY_FUNCTION__,
+        string fileName = __FILE__,
+        size_t lineNumber = __LINE__
+    ) {
+        this.log(Levels.INFO, msg, exception, moduleName, functionName, fileName, lineNumber);
+    }
+
+    public void info(
+        Exception exception,
+        string moduleName = __MODULE__,
+        string functionName = __PRETTY_FUNCTION__,
+        string fileName = __FILE__,
+        size_t lineNumber = __LINE__
+    ) {
+        this.log(Levels.INFO, exception, moduleName, functionName, fileName, lineNumber);
+    }
+
+    public void infoF(string fmt, T...)(
+        T args,
+        Exception exception = null,
+        string moduleName = __MODULE__,
+        string functionName = __PRETTY_FUNCTION__,
+        string fileName = __FILE__,
+        size_t lineNumber = __LINE__
+    ) {
+        this.logF!(fmt, T)(Levels.INFO, args, exception, moduleName, functionName, fileName, lineNumber);
+    }
+
+    public LogBuilder infoBuilder() {
+        return LogBuilder.forLogger(this).lvl(Levels.INFO);
+    }
+
+    public void warn(
+        string msg,
+        Exception exception = null,
+        string moduleName = __MODULE__,
+        string functionName = __PRETTY_FUNCTION__,
+        string fileName = __FILE__,
+        size_t lineNumber = __LINE__
+    ) {
+        this.log(Levels.WARN, msg, exception, moduleName, functionName, fileName, lineNumber);
+    }
+
+    public void warn(
+        Exception exception,
+        string moduleName = __MODULE__,
+        string functionName = __PRETTY_FUNCTION__,
+        string fileName = __FILE__,
+        size_t lineNumber = __LINE__
+    ) {
+        this.log(Levels.WARN, exception, moduleName, functionName, fileName, lineNumber);
+    }
+
+    public void warnF(string fmt, T...)(
+        T args,
+        Exception exception = null,
+        string moduleName = __MODULE__,
+        string functionName = __PRETTY_FUNCTION__,
+        string fileName = __FILE__,
+        size_t lineNumber = __LINE__
+    ) {
+        this.logF!(fmt, T)(Levels.WARN, args, exception, moduleName, functionName, fileName, lineNumber);
+    }
+
+    public LogBuilder warnBuilder() {
+        return LogBuilder.forLogger(this).lvl(Levels.WARN);
+    }
+
+    public void error(
+        string msg,
+        Exception exception = null,
+        string moduleName = __MODULE__,
+        string functionName = __PRETTY_FUNCTION__,
+        string fileName = __FILE__,
+        size_t lineNumber = __LINE__
+    ) {
+        this.log(Levels.ERROR, msg, exception, moduleName, functionName, fileName, lineNumber);
+    }
+
+    public void error(
+        Exception exception,
+        string moduleName = __MODULE__,
+        string functionName = __PRETTY_FUNCTION__,
+        string fileName = __FILE__,
+        size_t lineNumber = __LINE__
+    ) {
+        this.log(Levels.ERROR, exception, moduleName, functionName, fileName, lineNumber);
+    }
+
+    public void errorF(string fmt, T...)(
+        T args,
+        Exception exception = null,
+        string moduleName = __MODULE__,
+        string functionName = __PRETTY_FUNCTION__,
+        string fileName = __FILE__,
+        size_t lineNumber = __LINE__
+    ) {
+        this.logF!(fmt, T)(Levels.ERROR, args, exception, moduleName, functionName, fileName, lineNumber);
+    }
+
+    public LogBuilder errorBuilder() {
+        return LogBuilder.forLogger(this).lvl(Levels.ERROR);
+    }
+
+    // General test for all functions.
     unittest {
         import slf4d.testing_provider;
         auto p = new shared TestingLoggingProvider();

@@ -17,12 +17,7 @@ public import slf4d.level;
 import slf4d.provider;
 import slf4d.default_provider;
 import slf4d.noop_provider;
-
-/** 
- * The logger factory used to obtain new Loggers wherever SLF4D is used. This
- * is supplied by the configured LoggingProvider.
- */
-private shared LoggerFactory loggerFactory;
+import core.atomic;
 
 /** 
  * The logging provider. It defaults to the default provider included in the
@@ -30,6 +25,12 @@ private shared LoggerFactory loggerFactory;
  * `configureLoggingProvider` function on application startup.
  */
 private shared LoggingProvider loggingProvider;
+
+/** 
+ * An internal flag that's set once the logging provider is configured, and
+ * used to issue warnings if the provider is re-configured when it shouldn't be.
+ */
+private shared bool loggingProviderSet = false;
 
 /** 
  * Configures SLF4D to use the given logging provider. Call this once on
@@ -41,11 +42,53 @@ private shared LoggingProvider loggingProvider;
  *              use its built-in `NoOpProvider` from `slf4d.noop_provider`.
  */
 public void configureLoggingProvider(shared LoggingProvider provider) {
+    bool alreadySet = atomicLoad(loggingProviderSet);
+    if (alreadySet) {
+        Logger logger = getLogger();
+        static immutable string fmt = "The SLF4D logging provider has already been " ~
+        "configured with the provider %s. Re-configuring the logging provider " ~
+        "after it has already been configured is not supported, and may have " ~
+        "unintended consequences.";
+        logger.warnF!(fmt)(loggingProvider);
+    }
     if (provider is null) {
         loggingProvider = new shared NoOpProvider();
     } else {
         loggingProvider = provider;
     }
+    atomicStore(loggingProviderSet, true);
+}
+
+// Test that a warning is issued if the provider is configured more than once.
+unittest {
+    import slf4d.testing_provider;
+    assert(loggingProvider is null);
+    assert(loggingProviderSet == false);
+    auto provider = new shared TestingLoggingProvider();
+    configureLoggingProvider(provider);
+    assert(loggingProviderSet == true);
+    // Now try and configure it again. A warning message should be produced.
+    configureLoggingProvider(provider);
+    assert(provider.messages.length == 1);
+    LogMessage msg = provider.messages[0];
+    assert(msg.level == Levels.WARN);
+
+    // Reset the shared state for other unit tests.
+    loggingProvider = null;
+    loggingProviderSet = false;
+}
+
+// Test that if `null` is given, the NoOpProvider is used.
+unittest {
+    assert(loggingProvider is null);
+    assert(loggingProviderSet == false);
+    configureLoggingProvider(null);
+    assert(loggingProviderSet == true);
+    assert(cast(NoOpProvider) loggingProvider);
+
+    // Reset the shared state for other unit tests.
+    loggingProvider = null;
+    loggingProviderSet = false;
 }
 
 /** 
@@ -73,9 +116,200 @@ public Logger getLogger(string name = __MODULE__) {
     return getLoggerFactory().getLogger(name);
 }
 
-// Compile-time generated general-purpose convenient log functions that get a
-// logger via shared provider.
-// Note that we can define the mixin's `loggerRef` template argument using
-// `getLogger(moduleName)` since every function provides a `moduleName` arg.
-import slf4d.log_functions : LogFunctionsMixin, STANDARD_LOG_FUNCTIONS;
-mixin LogFunctionsMixin!(STANDARD_LOG_FUNCTIONS, q{getLogger(moduleName)});
+// Below this line are convenience log functions that delegate to `getLogger()`.
+// -----------------------------------------------------------------------------
+
+public void log(
+    Level level,
+    string msg,
+    Exception exception = null,
+    string moduleName = __MODULE__,
+    string functionName = __PRETTY_FUNCTION__,
+    string fileName = __FILE__,
+    size_t lineNumber = __LINE__
+) {
+    getLogger(moduleName).log(level, msg, exception, moduleName, functionName, fileName, lineNumber);
+}
+
+public void log(
+    Level level,
+    Exception exception,
+    string moduleName = __MODULE__,
+    string functionName = __PRETTY_FUNCTION__,
+    string fileName = __FILE__,
+    size_t lineNumber = __LINE__
+) {
+    getLogger(moduleName).log(level, exception, moduleName, functionName, fileName, lineNumber);
+}
+
+public void logF(string fmt, T...)(
+    Level level,
+    T args,
+    Exception exception = null,
+    string moduleName = __MODULE__,
+    string functionName = __PRETTY_FUNCTION__,
+    string fileName = __FILE__,
+    size_t lineNumber = __LINE__
+) {
+    getLogger(moduleName).logF!(fmt, T)(level, args, exception, moduleName, functionName, fileName, lineNumber);
+}
+
+public void trace(
+    string msg,
+    Exception exception = null,
+    string moduleName = __MODULE__,
+    string functionName = __PRETTY_FUNCTION__,
+    string fileName = __FILE__,
+    size_t lineNumber = __LINE__
+) {
+    log(Levels.TRACE, msg, exception, moduleName, functionName, fileName, lineNumber);
+}
+
+public void trace(
+    Exception exception,
+    string moduleName = __MODULE__,
+    string functionName = __PRETTY_FUNCTION__,
+    string fileName = __FILE__,
+    size_t lineNumber = __LINE__
+) {
+    log(Levels.TRACE, exception, moduleName, functionName, fileName, lineNumber);
+}
+
+public void traceF(string fmt, T...)(
+    T args,
+    Exception exception = null,
+    string moduleName = __MODULE__,
+    string functionName = __PRETTY_FUNCTION__,
+    string fileName = __FILE__,
+    size_t lineNumber = __LINE__
+) {
+    logF!(fmt, T)(Levels.TRACE, args, exception, moduleName, functionName, fileName, lineNumber);
+}
+
+public void debug_(
+    string msg,
+    Exception exception = null,
+    string moduleName = __MODULE__,
+    string functionName = __PRETTY_FUNCTION__,
+    string fileName = __FILE__,
+    size_t lineNumber = __LINE__
+) {
+    log(Levels.DEBUG, msg, exception, moduleName, functionName, fileName, lineNumber);
+}
+
+public void debug_(
+    Exception exception,
+    string moduleName = __MODULE__,
+    string functionName = __PRETTY_FUNCTION__,
+    string fileName = __FILE__,
+    size_t lineNumber = __LINE__
+) {
+    log(Levels.DEBUG, exception, moduleName, functionName, fileName, lineNumber);
+}
+
+public void debugF(string fmt, T...)(
+    T args,
+    Exception exception = null,
+    string moduleName = __MODULE__,
+    string functionName = __PRETTY_FUNCTION__,
+    string fileName = __FILE__,
+    size_t lineNumber = __LINE__
+) {
+    logF!(fmt, T)(Levels.DEBUG, args, exception, moduleName, functionName, fileName, lineNumber);
+}
+
+public void info(
+    string msg,
+    Exception exception = null,
+    string moduleName = __MODULE__,
+    string functionName = __PRETTY_FUNCTION__,
+    string fileName = __FILE__,
+    size_t lineNumber = __LINE__
+) {
+    log(Levels.INFO, msg, exception, moduleName, functionName, fileName, lineNumber);
+}
+
+public void info(
+    Exception exception,
+    string moduleName = __MODULE__,
+    string functionName = __PRETTY_FUNCTION__,
+    string fileName = __FILE__,
+    size_t lineNumber = __LINE__
+) {
+    log(Levels.INFO, exception, moduleName, functionName, fileName, lineNumber);
+}
+
+public void infoF(string fmt, T...)(
+    T args,
+    Exception exception = null,
+    string moduleName = __MODULE__,
+    string functionName = __PRETTY_FUNCTION__,
+    string fileName = __FILE__,
+    size_t lineNumber = __LINE__
+) {
+    logF!(fmt, T)(Levels.INFO, args, exception, moduleName, functionName, fileName, lineNumber);
+}
+
+public void warn(
+    string msg,
+    Exception exception = null,
+    string moduleName = __MODULE__,
+    string functionName = __PRETTY_FUNCTION__,
+    string fileName = __FILE__,
+    size_t lineNumber = __LINE__
+) {
+    log(Levels.WARN, msg, exception, moduleName, functionName, fileName, lineNumber);
+}
+
+public void warn(
+    Exception exception,
+    string moduleName = __MODULE__,
+    string functionName = __PRETTY_FUNCTION__,
+    string fileName = __FILE__,
+    size_t lineNumber = __LINE__
+) {
+    log(Levels.WARN, exception, moduleName, functionName, fileName, lineNumber);
+}
+
+public void warnF(string fmt, T...)(
+    T args,
+    Exception exception = null,
+    string moduleName = __MODULE__,
+    string functionName = __PRETTY_FUNCTION__,
+    string fileName = __FILE__,
+    size_t lineNumber = __LINE__
+) {
+    logF!(fmt, T)(Levels.WARN, args, exception, moduleName, functionName, fileName, lineNumber);
+}
+
+public void error(
+    string msg,
+    Exception exception = null,
+    string moduleName = __MODULE__,
+    string functionName = __PRETTY_FUNCTION__,
+    string fileName = __FILE__,
+    size_t lineNumber = __LINE__
+) {
+    log(Levels.ERROR, msg, exception, moduleName, functionName, fileName, lineNumber);
+}
+
+public void error(
+    Exception exception,
+    string moduleName = __MODULE__,
+    string functionName = __PRETTY_FUNCTION__,
+    string fileName = __FILE__,
+    size_t lineNumber = __LINE__
+) {
+    log(Levels.ERROR, exception, moduleName, functionName, fileName, lineNumber);
+}
+
+public void errorF(string fmt, T...)(
+    T args,
+    Exception exception = null,
+    string moduleName = __MODULE__,
+    string functionName = __PRETTY_FUNCTION__,
+    string fileName = __FILE__,
+    size_t lineNumber = __LINE__
+) {
+    logF!(fmt, T)(Levels.ERROR, args, exception, moduleName, functionName, fileName, lineNumber);
+}
