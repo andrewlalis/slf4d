@@ -163,74 +163,49 @@ struct Logger {
     }
 
     // Compile-time definitions of the various log functions that this Logger provides.
+    import slf4d.log_functions : LogFunctionsMixin;
+    mixin LogFunctionsMixin;
 
-    private static struct LogFunction {
-        string level;
-        string name;
-        string fName;
-        string builderName;
-    }
+    // General test for all compile-time-generated functions.
+    unittest {
+        import slf4d.testing_provider;
+        auto p = new shared TestingLoggingProvider();
+        Logger log = p.getLoggerFactory().getLogger();
 
-    private static immutable LogFunctions = [
-        LogFunction("Levels.TRACE", "trace", "traceF", "traceBuilder"),
-        LogFunction("Levels.DEBUG", "debug_", "debugF", "debugBuilder"),
-        LogFunction("Levels.INFO", "info", "infoF", "infoBuilder"),
-        LogFunction("Levels.WARN", "warn", "warnF", "warnBuilder"),
-        LogFunction("Levels.ERROR", "error", "errorF", "errorBuilder")
-    ];
+        log.trace("Test");
+        log.trace(new Exception("Oh no!"));
+        log.traceF!"Test %d"(42);
+        log.traceBuilder().msg("Test").log();
+        assert(p.messages.length == 4);
+        p.reset();
 
-    // Generate each of the functions defined below, for each LogFunction defined.
-    static foreach (lf; LogFunctions) {
-        import std.format;
+        log.debug_("Test");
+        log.debug_(new Exception("Oh no!"));
+        log.debugF!"Test %d"(42);
+        log.debugBuilder().msg("Test").log();
+        assert(p.messages.length == 4);
+        p.reset();
 
-        // Generate the basic log function.
-        mixin(q{
-            public void %s(
-                string msg,
-                Exception exception = null,
-                string moduleName = __MODULE__,
-                string functionName = __PRETTY_FUNCTION__,
-                string fileName = __FILE__,
-                size_t lineNumber = __LINE__
-            ) {
-                this.log(%s, msg, exception, moduleName, functionName, fileName, lineNumber);
-            }
-        }.format(lf.name, lf.level));
+        log.info("Test");
+        log.info(new Exception("Oh no!"));
+        log.infoF!"Test %d"(42);
+        log.infoBuilder().msg("Test").log();
+        assert(p.messages.length == 4);
+        p.reset();
 
-        // Generate log function that takes an exception without a message.
-        mixin(q{
-            public void %s(
-                Exception exception,
-                string moduleName = __MODULE__,
-                string functionName = __PRETTY_FUNCTION__,
-                string fileName = __FILE__,
-                size_t lineNumber = __LINE__
-            ) {
-                string message = exception.classinfo.name ~ ": " ~ exception.msg;
-                this.log(%s, message, exception, moduleName, functionName, fileName, lineNumber);
-            }
-        }.format(lf.name, lf.level));
+        log.warn("Test");
+        log.warn(new Exception("Oh no!"));
+        log.warnF!"Test %d"(42);
+        log.warnBuilder().msg("Test").log();
+        assert(p.messages.length == 4);
+        p.reset();
 
-        // Generate the logF function.
-        mixin(q{
-            public void %s(string fmt, T...)(
-                T args,
-                Exception exception = null,
-                string moduleName = __MODULE__,
-                string functionName = __PRETTY_FUNCTION__,
-                string fileName = __FILE__,
-                size_t lineNumber = __LINE__
-            ) {
-                this.logF!(fmt, T)(%s, args, exception, moduleName, functionName, fileName, lineNumber);
-            }
-        }.format(lf.fName, lf.level));
-
-        // Generate builder function.
-        mixin(q{
-            public LogBuilder %sBuilder() {
-                return LogBuilder.forLogger(this).lvl(%s);
-            }
-        }.format(lf.builderName, lf.level));
+        log.error("Test");
+        log.error(new Exception("Oh no!"));
+        log.errorF!"Test %d"(42);
+        log.errorBuilder().msg("Test").log();
+        assert(p.messages.length == 4);
+        p.reset();
     }
 }
 

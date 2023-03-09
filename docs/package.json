@@ -1,0 +1,22 @@
+{
+  "name": "docs",
+  "version": "0.0.1",
+  "description": "Documentation for SLF4D",
+  "main": "index.js",
+  "authors": {
+    "name": "Andrew Lalis",
+    "email": "andrewlalisofficial@gmail.com"
+  },
+  "repository": "https://github.com/andrewlalis/slf4d/docs",
+  "scripts": {
+    "dev": "vuepress dev src",
+    "build": "vuepress build src"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "vuepress-plugin-code-copy": "^1.0.6"
+  },
+  "devDependencies": {
+    "vuepress": "^1.5.3"
+  }
+}

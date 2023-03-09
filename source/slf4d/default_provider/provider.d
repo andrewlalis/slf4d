@@ -4,6 +4,7 @@
 module slf4d.default_provider.provider;
 
 import slf4d.provider;
+import slf4d.level;
 import slf4d.default_provider.factory;
 import slf4d.default_provider.handler;
 
@@ -18,9 +19,12 @@ class DefaultProvider : LoggingProvider {
      * Constructs the default provider.
      * Params:
      *   colored = Whether to color output.
+     *   rootLoggingLevel = The root logging level for all Loggers created by
+     *                      this provider's factory.
      */
-    public shared this(bool colored = true) {
+    public shared this(bool colored = true, Level rootLoggingLevel = Levels.INFO) {
         this.handler = new shared DefaultLogHandler(colored);
+        this.loggerFactory = new shared DefaultLoggerFactory(this.handler, rootLoggingLevel);
     }
     
     /** 
@@ -29,9 +33,6 @@ class DefaultProvider : LoggingProvider {
      * Returns: The logger factory.
      */
     public shared shared(DefaultLoggerFactory) getLoggerFactory() {
-        if (loggerFactory is null) {
-            loggerFactory = new shared DefaultLoggerFactory(this.handler);
-        }
-        return loggerFactory;
+        return this.loggerFactory;
     }
 }

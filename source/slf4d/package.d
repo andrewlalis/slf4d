@@ -72,3 +72,10 @@ public shared(LoggerFactory) getLoggerFactory() {
 public Logger getLogger(string name = __MODULE__) {
     return getLoggerFactory().getLogger(name);
 }
+
+// Compile-time generated general-purpose convenient log functions that get a
+// logger via shared provider.
+// Note that we can define the mixin's `loggerRef` template argument using
+// `getLogger(moduleName)` since every function provides a `moduleName` arg.
+import slf4d.log_functions : LogFunctionsMixin, STANDARD_LOG_FUNCTIONS;
+mixin LogFunctionsMixin!(STANDARD_LOG_FUNCTIONS, q{getLogger(moduleName)});
