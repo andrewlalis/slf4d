@@ -7,7 +7,7 @@ export default {
             document.querySelectorAll('a').forEach(link => {
                 if (link.href.includes("ddoc-")) {
                     const symbol = link.href.substring(link.href.indexOf("ddoc-") + 5);
-                    const fullUrl = "/handy-httpd/ddoc/" + symbol + ".html";
+                    const fullUrl = "/slf4d/ddoc/" + symbol + ".html";
                     link.href = fullUrl;
                     link.target = "_blank";
                     link.rel = "noopener noreferrer";

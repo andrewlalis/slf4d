@@ -14,7 +14,7 @@ import std.typecons : Nullable, nullable;
  * in your code. An ad-hoc Logger can be created and used anywhere, but usually
  * you'll want to use the `getLogger()` function to obtain a pre-configured
  * Logger that has been set up with an application-specific LogHandler. The
- * configured LogHandler is marked as `shared`, because only one handler
+ * configured LogHandler is marked as `shared`, because only one root handler
  * instance exists per application.
  * 
  * Note that the D language offers some special keywords like `__MODULE__` and
@@ -130,6 +130,33 @@ struct Logger {
             ExceptionInfo.from(exception),
             LogMessageSourceContext(moduleName, functionName, fileName, lineNumber)
         ));
+    }
+
+    /** 
+     * Logs an exception message. It creates a basic message string formatted
+     * like "ExceptionName: message".
+     * Params:
+     *   level = The log level.
+     *   exception = The exception that prompted this log.
+     *   moduleName = The name of the module. This will resolve to the current
+     *                module name by default.
+     *   functionName = The name of the function. This will resolve to the
+     *                current function name by default.
+     *   fileName = The name of the source file. This will resolve to the
+     *              current source file by default.
+     *   lineNumber = The line number in the source file. This will resolve to
+     *                the current source file's line number by default.
+     */
+    public void log(
+        Level level,
+        Exception exception,
+        string moduleName = __MODULE__,
+        string functionName = __PRETTY_FUNCTION__,
+        string fileName = __FILE__,
+        size_t lineNumber = __LINE__
+    ) {
+        string msg = exception.classinfo.name ~ ": " ~ exception.msg;
+        this.log(level, msg, exception, moduleName, functionName, fileName, lineNumber);
     }
 
     /** 

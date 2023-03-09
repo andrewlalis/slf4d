@@ -37,7 +37,7 @@ int main() {
     }
     
     chdir(docsDir);
-    pid = spawnProcess([DOC_GEN_SRC ~ "/doc2", "-i", "-o", DOC_OUT, "../source"]);
+    pid = spawnProcess([DOC_GEN_SRC ~ "/doc2", "-i", "--case-insensitive-filenames=false", "-o", DOC_OUT, "../source"]);
     result = wait(pid);
     if (result != 0) {
         writefln!"ddoc generation failed with exit code %d"(result);

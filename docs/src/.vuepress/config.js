@@ -50,7 +50,7 @@ module.exports = {
       },
       {
         text: 'ddoc',
-        link: '/handy-httpd/ddoc/index.html',
+        link: '/slf4d/ddoc/index.html',
         target: '_blank'
       }
     ],
@@ -61,7 +61,8 @@ module.exports = {
           collapsable: false,
           children: [
             '',
-            'using-vue',
+            'using-slf4d',
+            'configuring',
           ]
         }
       ],
@@ -74,12 +75,12 @@ module.exports = {
   plugins: [
     '@vuepress/plugin-back-to-top',
     '@vuepress/plugin-medium-zoom',
-    ['vuepress-plugin-code-copy', {
-      backgroundTransition: false,
-      staticIcon: false,
-      color: '#ff3900',
-      successText: 'Copied to clipboard.'
-    }],
+    // ['vuepress-plugin-code-copy', {
+    //   backgroundTransition: false,
+    //   staticIcon: false,
+    //   color: '#ff3900',
+    //   successText: 'Copied to clipboard.'
+    // }],
     [ddoc_link({
       version: '5.0.0',
       moduleName: 'handy-httpd'

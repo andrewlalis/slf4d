@@ -1,8 +1,8 @@
 # Introduction
 
-SLF4D stands for _Simple Logging Facade for D_, but what does that mean? Well, put briefly, it's a _frontend_ for logging, with a configurable _backend_ for handling log messages. This means that many different libraries can all use SLF4D, while letting the end-user who's making their application decide how they want log messages to be processed.
+SLF4D stands for _Simple Logging Facade for D_, but what does that mean? Well, put briefly, it's a _frontend_ for logging, with a configurable _backend_ for handling log messages. This means that many different libraries can all use SLF4D, while letting the end-user decide how they want log messages to be processed.
 
-Suppose I've made my own D library that does something very complex, and I want to add logging to it. I can use SLF4D like so:
+Suppose I've made my own D library, and I want to add logging to it. I can use SLF4D like so:
 
 ```d
 module my_lib;
@@ -15,7 +15,7 @@ void myComplexFunction(int x) {
 }
 ```
 
-Then when I go to make an app using `my_lib`, I can simply configure logging once in my app, and any modules using SLF4D will have their messages handled according to my configuration:
+Then when I go to make an app using `my_lib`, I can configure logging _once_ in my app, and any modules using SLF4D will have their messages handled according to my configuration:
 
 ```d
 module my_app;
@@ -34,4 +34,6 @@ void main() {
 }
 ```
 
-This short example illustrates the main purpose of SLF4D: **simplify the logging interface**, and **give the end-user control over their log messages**.
+This short example illustrates the main purposes of SLF4D:
+- **Simplify the logging interface for developers**
+- **Give the end-user complete control over their log messages**
