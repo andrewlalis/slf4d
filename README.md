@@ -10,6 +10,8 @@
 
 Simple Logging Facade for D, inspired by SLF4J. Add it to your project with `dub add slf4d`, and start logging sensibly!
 
+[Read the documentation here!](https://andrewlalis.github.io/slf4d/)
+
 SLF4D provides a common interface and core logging features, while allowing third-party providers to handle log messages produced at runtime. Take a look at the following example, where we get a logger from SLF4D and write an *info* message.
 
 ```d
