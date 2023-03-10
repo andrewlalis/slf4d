@@ -45,6 +45,25 @@ class TestingLoggingProvider : LoggingProvider {
     public shared void reset() {
         this.factory.handler.reset();
     }
+
+    /** 
+     * Gets the number of messages that have been logged.
+     * Returns: The number of messages that have been logged.
+     */
+    public shared size_t messageCount() {
+        return this.factory.handler.messageCount;
+    }
+
+    /** 
+     * Gets the number of messages that have been logged at a given level.
+     * Params:
+     *   levelFilter = The level to filter by.
+     * Returns: The number of messages that have been logged at the given level.
+     */
+    public shared size_t messageCount(Level levelFilter) {
+        import std.algorithm : count;
+        return cast(size_t) this.messages().count!(m => m.level == levelFilter);
+    }
 }
 
 /** 

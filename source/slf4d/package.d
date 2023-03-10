@@ -59,64 +59,6 @@ public void configureLoggingProvider(shared LoggingProvider provider) {
     atomicStore(loggingProviderSet, true);
 }
 
-version(unittest) {
-    import core.sync.mutex;
-
-    public shared Mutex loggingTestingMutex;
-    static this() {
-        loggingTestingMutex = new shared Mutex();
-    }
-
-    public void assertNotInitialized() {
-        import std.format : format;
-        assert(loggingProvider is null, format!"loggingProvider is not null when it shouldn't have been initialized yet: %s"(loggingProvider));
-        assert(loggingProviderSet == false, "loggingProviderSet is true the logging provider hasn't been configured yet.");
-    }
-
-    public void assertInitialized(ProviderClass)() {
-        import std.format : format;
-        import std.traits;
-        assert(loggingProvider !is null, "loggingProvider is null when it should have been initialized.");
-        assert(loggingProviderSet, "loggingProviderSet is false when the logging provider should have been initialized.");
-        assert(cast(ProviderClass) loggingProvider, format!"loggingProvider is not of the expected class %s, instead it is %s"(fullyQualifiedName!ProviderClass, loggingProvider));
-    }
-
-    public void resetLoggingState() {
-        loggingProvider = null;
-        loggingProviderSet = false;
-    }
-}
-
-// Test that a warning is issued if the provider is configured more than once.
-unittest {
-    import slf4d.testing_provider;
-    synchronized(loggingTestingMutex) {
-        assertNotInitialized();
-        auto provider = new shared TestingLoggingProvider();
-        configureLoggingProvider(provider);
-        assert(loggingProviderSet == true, "loggingProviderSet is not true after configuring the logging provider.");
-        // Now try and configure it again. A warning message should be produced.
-        configureLoggingProvider(provider);
-        assertInitialized!TestingLoggingProvider();
-        assert(provider.messages.length == 1, "A log message was not generated after re-configuring the logging provider.");
-        LogMessage msg = provider.messages[0];
-        assert(msg.level == Levels.WARN, "The level of the generated log message was not WARN.");
-        resetLoggingState();
-    }
-}
-
-// Test that if `null` is given, the NoOpProvider is used.
-unittest {
-    synchronized(loggingTestingMutex) {
-        assertNotInitialized();
-        configureLoggingProvider(null);
-        assertInitialized!NoOpProvider();
-        assert(loggingProviderSet == true, "loggingProviderSet is not true after configuring the logging provider.");
-        assert(cast(NoOpProvider) loggingProvider, "loggingProvider is not an instance of NoOpProvider, after configured with null.");
-        resetLoggingState();
-    }
-}
-
 /** 
  * Gets the global shared logger factory instance. If no provider has been
  * explicitly configured, the `slf4d.default_provider` module's
@@ -338,4 +280,99 @@ public void errorF(string fmt, T...)(
     size_t lineNumber = __LINE__
 ) {
     logF!(fmt, T)(Levels.ERROR, args, exception, moduleName, functionName, fileName, lineNumber);
+}
+
+
+
+/** 
+ * Some components that are only available during testing, which are needed
+ * for checking and mutating the global state in ways that are not permitted
+ * in normal operation.
+ */
+version(unittest) {
+    import core.sync.mutex;
+
+    /** 
+     * A shared mutex you should synchronize on if you're testing anything
+     * involving the global shared logging provider.
+     */
+    public shared Mutex loggingTestingMutex;
+
+    static this() {
+        loggingTestingMutex = new shared Mutex();
+    }
+
+    /** 
+     * Asserts that the logging state is not yet initialized.
+     */
+    public void assertNotInitialized() {
+        import std.format : format;
+        assert(
+            loggingProvider is null,
+            format!"loggingProvider is not null when it shouldn't have been initialized yet: %s"(loggingProvider)
+        );
+        assert(
+            loggingProviderSet == false,
+            "loggingProviderSet is true the logging provider hasn't been configured yet."
+        );
+    }
+
+    /** 
+     * Asserts that the logging state has been initialized with a given
+     * provider class.
+     */
+    public void assertInitialized(ProviderClass)() {
+        import std.format : format;
+        import std.traits;
+        assert(
+            loggingProvider !is null,
+            "loggingProvider is null when it should have been initialized."
+        );
+        assert(
+            loggingProviderSet,
+            "loggingProviderSet is false when the logging provider should have been initialized."
+        );
+        assert(
+            cast(ProviderClass) loggingProvider,
+            format!"loggingProvider is not of the expected class %s, instead it is %s"(
+                fullyQualifiedName!ProviderClass,
+                loggingProvider
+            )
+        );
+    }
+
+    /** 
+     * Resets the logging state. Call this after your test, if you configured
+     * the global shared logging provider.
+     */
+    public void resetLoggingState() {
+        loggingProvider = null;
+        loggingProviderSet = false;
+    }
+}
+
+// Test that a warning is issued if the provider is configured more than once.
+unittest {
+    import slf4d.testing_provider;
+    synchronized(loggingTestingMutex) {
+        assertNotInitialized();
+        auto provider = new shared TestingLoggingProvider();
+        configureLoggingProvider(provider);
+        assert(loggingProviderSet == true, "loggingProviderSet is not true after configuring the logging provider.");
+        // Now try and configure it again. A warning message should be produced.
+        configureLoggingProvider(provider);
+        assertInitialized!TestingLoggingProvider();
+        assert(provider.messageCount == 1 && provider.messageCount(Levels.WARN) == 1);
+        resetLoggingState();
+    }
+}
+
+// Test that if `null` is given, the NoOpProvider is used.
+unittest {
+    synchronized(loggingTestingMutex) {
+        assertNotInitialized();
+        configureLoggingProvider(null);
+        assertInitialized!NoOpProvider();
+        resetLoggingState();
+    }
 }
