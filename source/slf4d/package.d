@@ -66,14 +66,24 @@ version(unittest) {
     static this() {
         testingMutex = new shared Mutex();
     }
+
+    public void assertNotInitialized() {
+        import std.format : format;
+        assert(loggingProvider is null, format!"loggingProvider is not null when it shouldn't have been initialized yet: %s"(loggingProvider));
+        assert(loggingProviderSet == false, "loggingProviderSet is true the logging provider hasn't been configured yet.");
+    }
+
+    public void resetState() {
+        loggingProvider = null;
+        loggingProviderSet = false;
+    }
 }
 
 // Test that a warning is issued if the provider is configured more than once.
 unittest {
     import slf4d.testing_provider;
     synchronized(testingMutex) {
-        assert(loggingProvider is null, "loggingProvider is not null when it shouldn't have been initialized yet.");
-        assert(loggingProviderSet == false, "loggingProviderSet is true the logging provider hasn't been configured yet.");
+        assertNotInitialized();
         auto provider = new shared TestingLoggingProvider();
         configureLoggingProvider(provider);
         assert(loggingProviderSet == true, "loggingProviderSet is not true after configuring the logging provider.");
@@ -83,24 +93,19 @@ unittest {
         LogMessage msg = provider.messages[0];
         assert(msg.level == Levels.WARN, "The level of the generated log message was not WARN.");
 
-        // Reset the shared state for other unit tests.
-        loggingProvider = null;
-        loggingProviderSet = false;
+        resetState();
     }
 }
 
 // Test that if `null` is given, the NoOpProvider is used.
 unittest {
     synchronized(testingMutex) {
-        assert(loggingProvider is null, "loggingProvider is not null when it shouldn't have been initialized yet.");
-        assert(loggingProviderSet == false, "loggingProviderSet is true the logging provider hasn't been configured yet.");
+        assertNotInitialized();
         configureLoggingProvider(null);
         assert(loggingProviderSet == true, "loggingProviderSet is not true after configuring the logging provider.");
         assert(cast(NoOpProvider) loggingProvider, "loggingProvider is not an instance of NoOpProvider, after configured with null.");
 
-        // Reset the shared state for other unit tests.
-        loggingProvider = null;
-        loggingProviderSet = false;
+        resetState();
     }
 }
 
