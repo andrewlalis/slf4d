@@ -59,36 +59,49 @@ public void configureLoggingProvider(shared LoggingProvider provider) {
     atomicStore(loggingProviderSet, true);
 }
 
+version(unittest) {
+    import core.sync.mutex;
+
+    public shared Mutex testingMutex;
+    static this() {
+        testingMutex = new shared Mutex();
+    }
+}
+
 // Test that a warning is issued if the provider is configured more than once.
 unittest {
     import slf4d.testing_provider;
-    assert(loggingProvider is null, "loggingProvider is not null when it shouldn't have been initialized yet.");
-    assert(loggingProviderSet == false, "loggingProviderSet is true the logging provider hasn't been configured yet.");
-    auto provider = new shared TestingLoggingProvider();
-    configureLoggingProvider(provider);
-    assert(loggingProviderSet == true, "loggingProviderSet is not true after configuring the logging provider.");
-    // Now try and configure it again. A warning message should be produced.
-    configureLoggingProvider(provider);
-    assert(provider.messages.length == 1, "A log message was not generated after re-configuring the logging provider.");
-    LogMessage msg = provider.messages[0];
-    assert(msg.level == Levels.WARN, "The level of the generated log message was not WARN.");
+    synchronized(testingMutex) {
+        assert(loggingProvider is null, "loggingProvider is not null when it shouldn't have been initialized yet.");
+        assert(loggingProviderSet == false, "loggingProviderSet is true the logging provider hasn't been configured yet.");
+        auto provider = new shared TestingLoggingProvider();
+        configureLoggingProvider(provider);
+        assert(loggingProviderSet == true, "loggingProviderSet is not true after configuring the logging provider.");
+        // Now try and configure it again. A warning message should be produced.
+        configureLoggingProvider(provider);
+        assert(provider.messages.length == 1, "A log message was not generated after re-configuring the logging provider.");
+        LogMessage msg = provider.messages[0];
+        assert(msg.level == Levels.WARN, "The level of the generated log message was not WARN.");
 
-    // Reset the shared state for other unit tests.
-    loggingProvider = null;
-    loggingProviderSet = false;
+        // Reset the shared state for other unit tests.
+        loggingProvider = null;
+        loggingProviderSet = false;
+    }
 }
 
 // Test that if `null` is given, the NoOpProvider is used.
 unittest {
-    assert(loggingProvider is null, "loggingProvider is not null when it shouldn't have been initialized yet.");
-    assert(loggingProviderSet == false, "loggingProviderSet is true the logging provider hasn't been configured yet.");
-    configureLoggingProvider(null);
-    assert(loggingProviderSet == true, "loggingProviderSet is not true after configuring the logging provider.");
-    assert(cast(NoOpProvider) loggingProvider, "loggingProvider is not an instance of NoOpProvider, after configured with null.");
+    synchronized(testingMutex) {
+        assert(loggingProvider is null, "loggingProvider is not null when it shouldn't have been initialized yet.");
+        assert(loggingProviderSet == false, "loggingProviderSet is true the logging provider hasn't been configured yet.");
+        configureLoggingProvider(null);
+        assert(loggingProviderSet == true, "loggingProviderSet is not true after configuring the logging provider.");
+        assert(cast(NoOpProvider) loggingProvider, "loggingProvider is not an instance of NoOpProvider, after configured with null.");
 
-    // Reset the shared state for other unit tests.
-    loggingProvider = null;
-    loggingProviderSet = false;
+        // Reset the shared state for other unit tests.
+        loggingProvider = null;
+        loggingProviderSet = false;
+    }
 }
 
 /** 
