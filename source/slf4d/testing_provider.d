@@ -69,9 +69,9 @@ unittest {
 
     auto p = new shared TestingLoggingProvider();
     assert(p.messages.length == 0);
-    configureLoggingProvider(p);
+    
 
-    auto log = getLogger();
+    auto log = p.getLoggerFactory().getLogger();
     log.info("Testing");
     assert(p.messages.length == 1);
     p.reset();

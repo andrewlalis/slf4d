@@ -62,9 +62,9 @@ public void configureLoggingProvider(shared LoggingProvider provider) {
 version(unittest) {
     import core.sync.mutex;
 
-    public shared Mutex testingMutex;
+    public shared Mutex loggingTestingMutex;
     static this() {
-        testingMutex = new shared Mutex();
+        loggingTestingMutex = new shared Mutex();
     }
 
     public void assertNotInitialized() {
@@ -73,7 +73,15 @@ version(unittest) {
         assert(loggingProviderSet == false, "loggingProviderSet is true the logging provider hasn't been configured yet.");
     }
 
-    public void resetState() {
+    public void assertInitialized(ProviderClass)() {
+        import std.format : format;
+        import std.traits;
+        assert(loggingProvider !is null, "loggingProvider is null when it should have been initialized.");
+        assert(loggingProviderSet, "loggingProviderSet is false when the logging provider should have been initialized.");
+        assert(cast(ProviderClass) loggingProvider, format!"loggingProvider is not of the expected class %s, instead it is %s"(fullyQualifiedName!ProviderClass, loggingProvider));
+    }
+
+    public void resetLoggingState() {
         loggingProvider = null;
         loggingProviderSet = false;
     }
@@ -82,30 +90,30 @@ version(unittest) {
 // Test that a warning is issued if the provider is configured more than once.
 unittest {
     import slf4d.testing_provider;
-    synchronized(testingMutex) {
+    synchronized(loggingTestingMutex) {
         assertNotInitialized();
         auto provider = new shared TestingLoggingProvider();
         configureLoggingProvider(provider);
         assert(loggingProviderSet == true, "loggingProviderSet is not true after configuring the logging provider.");
         // Now try and configure it again. A warning message should be produced.
         configureLoggingProvider(provider);
+        assertInitialized!TestingLoggingProvider();
         assert(provider.messages.length == 1, "A log message was not generated after re-configuring the logging provider.");
         LogMessage msg = provider.messages[0];
         assert(msg.level == Levels.WARN, "The level of the generated log message was not WARN.");
-
-        resetState();
+        resetLoggingState();
     }
 }
 
 // Test that if `null` is given, the NoOpProvider is used.
 unittest {
-    synchronized(testingMutex) {
+    synchronized(loggingTestingMutex) {
         assertNotInitialized();
         configureLoggingProvider(null);
+        assertInitialized!NoOpProvider();
         assert(loggingProviderSet == true, "loggingProviderSet is not true after configuring the logging provider.");
         assert(cast(NoOpProvider) loggingProvider, "loggingProvider is not an instance of NoOpProvider, after configured with null.");
-
-        resetState();
+        resetLoggingState();
     }
 }
 
