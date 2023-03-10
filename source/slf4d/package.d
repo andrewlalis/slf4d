@@ -71,6 +71,7 @@ public shared(LoggingProvider) getLoggingProvider() {
             import slf4d.testing_provider : TestingLoggingProvider;
             loggingProvider = new shared TestingLoggingProvider();
         } else {
+            import slf4d.default_provider : DefaultProvider;
             loggingProvider = new shared DefaultProvider();
         }
     }
@@ -86,7 +87,7 @@ version(unittest) {
      * Returns: The logging provider.
      */
     public shared(TestingLoggingProvider) getTestingProvider() {
-        return cast(TestingLoggingProvider) getLoggingProvider();
+        return cast(shared(TestingLoggingProvider)) getLoggingProvider();
     }
 }
 
