@@ -32,68 +32,42 @@ SLF4D defines a [Level](ddoc-slf4d.level.Level) struct with a `name` and an inte
 All log messages are generated using a [Logger](ddoc-slf4d.logger.Logger) struct. You can obtain a logger via the [getLogger()](ddoc-slf4d.getLogger) function. Each logger has a `name`, which defaults to the name of the D module from which `getLogger()` was called.
 
 ```d
-Logger log = getLogger();
-log.info("Log message");
-
-Logger namedLog = getLogger("custom-name");
-namedLog.info("Log message from named logger.");
-```
-
-### Base Logging Functions
-
-Each logger provides the following base log functions:
-
-```d
 Logger logger = getLogger();
-
-// Log a string message. Optionally provide an exception.
-logger.log(Levels.INFO, "Message");
-logger.log(Levels.WARN, "Something went wrong.", new Exception("Uh oh!"));
-
-// Log an exception.
-logger.log(Levels.ERROR, new Exception("Uh oh!"));
-
-// Log a formatted string.
-logger.logF!"This is a formatted message: %d"(42);
-
-// Build a log message using a fluent builder.
-logger.builder()
-    .msg("Message")
-    .lvl(Levels.WARN)
-    .exc(new Exception("Oh no!"))
-    .log();
+Logger namedLogger = getLogger("custom-name");
 ```
 
-### Standard Level Logging Functions
+> Note: Unless you want a logger with a custom name, it's easier to just use the [logging functions](./using-slf4d.md#logging-functions) without specifying a Logger.
 
-It would get tedious to have to write out each log message's level each time you wanted to log something. That's why the Logger comes with a set of pre-generated functions for logging at each of the 5 [standard logging levels](./using-slf4d.md#logging-levels).
+## Logging Functions
+
+SLF4D defines the following 3 types of logging functions:
+1. **Basic message logs** - Write a log message string, at a specified log level. You can optionally include an Exception.
+2. **Exception logs** - Write a log message at a specified log level, from an Exception that was thrown.
+3. **Formatted logs** - Write a formatted log message at a specified log level, using a series of format arguments. This ultimately gets formatted by `std.format : format`.
+
+These are illustrated below:
 
 ```d
-Logger logger = getLogger();
-
-logger.log(Levels.INFO, "Message"); // This...
-logger.info("Message"); // is the same as this!
-
-// Formatted messages work too.
-logger.infoF!"Message %d"(42);
-
-// So do builders.
-logger.warnBuilder().msg("Uh oh.").log();
+// 1.
+log(Levels.DEBUG, "This is a basic log message.");
+log(Levels.TRACE, "Another basic message", new Exception("With exception"));
+// 2.
+log(Levels.ERROR, new Exception("An exception log message."));
+// 3.
+logF!"This is a formatted log message: %d"(Levels.INFO, 42);
 ```
 
-> Note: Because `debug` is a D language keyword, instead of writing `log.debug("msg");`, you should write `log.debug_("msg");`.
-
-These functions are also defined in the scope of the `slf4d` package, as a shortcut so you don't always have to call `getLogger()` to start logging.
+Because SLF4D defines a set of [standard logging levels](ddoc-slf4d.level.Levels), it also includes a variant of each of the above functions, for each logging level. The snippet below shows some of these functions, but for a complete list, check the [slf4d.log_functions](ddoc-slf4d.log_functions) module.
 
 ```d
-import slf4d;
-
-void doStuff() {
-    // You can do this:
-    Logger logger = getLogger();
-    logger.info("Testing");
-
-    // Or this for short.
-    info("Testing");
+info("This is an info message.");
+traceF!"Calling function with args: %s"(args);
+debug_("This is a debug message.");
+try {
+    doSomethingRisky();
+} catch (Exception e) {
+    error(e);
 }
 ```
+
+> Note: Because `debug` is a D language keyword, instead of writing `debug("msg");`, you should write `log.debug_("msg");`.

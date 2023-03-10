@@ -21,6 +21,9 @@ class CustomLogHandler : LogHandler {
 
 unittest {
     configureLoggingProvider(new shared CustomProvider());
+    // Use this helper function to ensure that your provider was initialized.
+    assertInitialized!CustomProvider();
+
     auto log = getLogger();
     log.info("Testing the custom provider.");
     log.warn("Here is a warning message.");

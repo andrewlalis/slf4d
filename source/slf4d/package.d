@@ -10,13 +10,12 @@ public import slf4d.logger;
 public import slf4d.factory;
 public import slf4d.handler;
 public import slf4d.level;
+public import slf4d.log_functions;
 
 // Below the public imports, we define some common global state for the SLF4D
 // logging system.
 
 import slf4d.provider;
-import slf4d.default_provider;
-import slf4d.noop_provider;
 import core.atomic;
 
 /** 
@@ -52,11 +51,43 @@ public void configureLoggingProvider(shared LoggingProvider provider) {
         logger.warnF!(fmt)(loggingProvider);
     }
     if (provider is null) {
+        import slf4d.noop_provider : NoOpProvider;
         loggingProvider = new shared NoOpProvider();
     } else {
         loggingProvider = provider;
     }
     atomicStore(loggingProviderSet, true);
+}
+
+/** 
+ * Gets the global shared logging provider instance. If no provider has been
+ * explicitly configured via `configureLoggingProvider`, then SLF4D's default
+ * provider will be used (or testing provider for unit tests).
+ * Returns: The logging provider.
+ */
+public shared(LoggingProvider) getLoggingProvider() {
+    if (loggingProvider is null) {
+        version(unittest) {
+            import slf4d.testing_provider : TestingLoggingProvider;
+            loggingProvider = new shared TestingLoggingProvider();
+        } else {
+            loggingProvider = new shared DefaultProvider();
+        }
+    }
+    return loggingProvider;
+}
+
+version(unittest) {
+    import slf4d.testing_provider : TestingLoggingProvider;
+
+    /** 
+     * Function that's available to unit tests that gets the current logging
+     * provider, and casts it to `TestingLoggingProvider`.
+     * Returns: The logging provider.
+     */
+    public shared(TestingLoggingProvider) getTestingProvider() {
+        return cast(TestingLoggingProvider) getLoggingProvider();
+    }
 }
 
 /** 
@@ -66,10 +97,7 @@ public void configureLoggingProvider(shared LoggingProvider provider) {
  * Returns: The logger factory.
  */
 public shared(LoggerFactory) getLoggerFactory() {
-    if (loggingProvider is null) {
-        loggingProvider = new shared DefaultProvider();
-    }
-    return loggingProvider.getLoggerFactory();
+    return getLoggingProvider().getLoggerFactory();
 }
 
 /** 
@@ -84,206 +112,6 @@ public Logger getLogger(string name = __MODULE__) {
     return getLoggerFactory().getLogger(name);
 }
 
-// Below this line are convenience log functions that delegate to `getLogger()`.
-// -----------------------------------------------------------------------------
-
-public void log(
-    Level level,
-    string msg,
-    Exception exception = null,
-    string moduleName = __MODULE__,
-    string functionName = __PRETTY_FUNCTION__,
-    string fileName = __FILE__,
-    size_t lineNumber = __LINE__
-) {
-    getLogger(moduleName).log(level, msg, exception, moduleName, functionName, fileName, lineNumber);
-}
-
-public void log(
-    Level level,
-    Exception exception,
-    string moduleName = __MODULE__,
-    string functionName = __PRETTY_FUNCTION__,
-    string fileName = __FILE__,
-    size_t lineNumber = __LINE__
-) {
-    getLogger(moduleName).log(level, exception, moduleName, functionName, fileName, lineNumber);
-}
-
-public void logF(string fmt, T...)(
-    Level level,
-    T args,
-    Exception exception = null,
-    string moduleName = __MODULE__,
-    string functionName = __PRETTY_FUNCTION__,
-    string fileName = __FILE__,
-    size_t lineNumber = __LINE__
-) {
-    getLogger(moduleName).logF!(fmt, T)(level, args, exception, moduleName, functionName, fileName, lineNumber);
-}
-
-public void trace(
-    string msg,
-    Exception exception = null,
-    string moduleName = __MODULE__,
-    string functionName = __PRETTY_FUNCTION__,
-    string fileName = __FILE__,
-    size_t lineNumber = __LINE__
-) {
-    log(Levels.TRACE, msg, exception, moduleName, functionName, fileName, lineNumber);
-}
-
-public void trace(
-    Exception exception,
-    string moduleName = __MODULE__,
-    string functionName = __PRETTY_FUNCTION__,
-    string fileName = __FILE__,
-    size_t lineNumber = __LINE__
-) {
-    log(Levels.TRACE, exception, moduleName, functionName, fileName, lineNumber);
-}
-
-public void traceF(string fmt, T...)(
-    T args,
-    Exception exception = null,
-    string moduleName = __MODULE__,
-    string functionName = __PRETTY_FUNCTION__,
-    string fileName = __FILE__,
-    size_t lineNumber = __LINE__
-) {
-    logF!(fmt, T)(Levels.TRACE, args, exception, moduleName, functionName, fileName, lineNumber);
-}
-
-public void debug_(
-    string msg,
-    Exception exception = null,
-    string moduleName = __MODULE__,
-    string functionName = __PRETTY_FUNCTION__,
-    string fileName = __FILE__,
-    size_t lineNumber = __LINE__
-) {
-    log(Levels.DEBUG, msg, exception, moduleName, functionName, fileName, lineNumber);
-}
-
-public void debug_(
-    Exception exception,
-    string moduleName = __MODULE__,
-    string functionName = __PRETTY_FUNCTION__,
-    string fileName = __FILE__,
-    size_t lineNumber = __LINE__
-) {
-    log(Levels.DEBUG, exception, moduleName, functionName, fileName, lineNumber);
-}
-
-public void debugF(string fmt, T...)(
-    T args,
-    Exception exception = null,
-    string moduleName = __MODULE__,
-    string functionName = __PRETTY_FUNCTION__,
-    string fileName = __FILE__,
-    size_t lineNumber = __LINE__
-) {
-    logF!(fmt, T)(Levels.DEBUG, args, exception, moduleName, functionName, fileName, lineNumber);
-}
-
-public void info(
-    string msg,
-    Exception exception = null,
-    string moduleName = __MODULE__,
-    string functionName = __PRETTY_FUNCTION__,
-    string fileName = __FILE__,
-    size_t lineNumber = __LINE__
-) {
-    log(Levels.INFO, msg, exception, moduleName, functionName, fileName, lineNumber);
-}
-
-public void info(
-    Exception exception,
-    string moduleName = __MODULE__,
-    string functionName = __PRETTY_FUNCTION__,
-    string fileName = __FILE__,
-    size_t lineNumber = __LINE__
-) {
-    log(Levels.INFO, exception, moduleName, functionName, fileName, lineNumber);
-}
-
-public void infoF(string fmt, T...)(
-    T args,
-    Exception exception = null,
-    string moduleName = __MODULE__,
-    string functionName = __PRETTY_FUNCTION__,
-    string fileName = __FILE__,
-    size_t lineNumber = __LINE__
-) {
-    logF!(fmt, T)(Levels.INFO, args, exception, moduleName, functionName, fileName, lineNumber);
-}
-
-public void warn(
-    string msg,
-    Exception exception = null,
-    string moduleName = __MODULE__,
-    string functionName = __PRETTY_FUNCTION__,
-    string fileName = __FILE__,
-    size_t lineNumber = __LINE__
-) {
-    log(Levels.WARN, msg, exception, moduleName, functionName, fileName, lineNumber);
-}
-
-public void warn(
-    Exception exception,
-    string moduleName = __MODULE__,
-    string functionName = __PRETTY_FUNCTION__,
-    string fileName = __FILE__,
-    size_t lineNumber = __LINE__
-) {
-    log(Levels.WARN, exception, moduleName, functionName, fileName, lineNumber);
-}
-
-public void warnF(string fmt, T...)(
-    T args,
-    Exception exception = null,
-    string moduleName = __MODULE__,
-    string functionName = __PRETTY_FUNCTION__,
-    string fileName = __FILE__,
-    size_t lineNumber = __LINE__
-) {
-    logF!(fmt, T)(Levels.WARN, args, exception, moduleName, functionName, fileName, lineNumber);
-}
-
-public void error(
-    string msg,
-    Exception exception = null,
-    string moduleName = __MODULE__,
-    string functionName = __PRETTY_FUNCTION__,
-    string fileName = __FILE__,
-    size_t lineNumber = __LINE__
-) {
-    log(Levels.ERROR, msg, exception, moduleName, functionName, fileName, lineNumber);
-}
-
-public void error(
-    Exception exception,
-    string moduleName = __MODULE__,
-    string functionName = __PRETTY_FUNCTION__,
-    string fileName = __FILE__,
-    size_t lineNumber = __LINE__
-) {
-    log(Levels.ERROR, exception, moduleName, functionName, fileName, lineNumber);
-}
-
-public void errorF(string fmt, T...)(
-    T args,
-    Exception exception = null,
-    string moduleName = __MODULE__,
-    string functionName = __PRETTY_FUNCTION__,
-    string fileName = __FILE__,
-    size_t lineNumber = __LINE__
-) {
-    logF!(fmt, T)(Levels.ERROR, args, exception, moduleName, functionName, fileName, lineNumber);
-}
-
-
-
 /** 
  * Some components that are only available during testing, which are needed
  * for checking and mutating the global state in ways that are not permitted
@@ -293,10 +121,9 @@ version(unittest) {
     import core.sync.mutex;
 
     /** 
-     * A shared mutex you should synchronize on if you're testing anything
-     * involving the global shared logging provider.
+     * An internal mutex to synchronize tests that affect the core logging state.
      */
-    public shared Mutex loggingTestingMutex;
+    private shared Mutex loggingTestingMutex;
 
     static this() {
         loggingTestingMutex = new shared Mutex();
@@ -372,6 +199,7 @@ unittest {
     synchronized(loggingTestingMutex) {
         assertNotInitialized();
         configureLoggingProvider(null);
+        import slf4d.noop_provider : NoOpProvider;
         assertInitialized!NoOpProvider();
         resetLoggingState();
     }

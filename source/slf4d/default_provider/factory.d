@@ -4,6 +4,7 @@
 module slf4d.default_provider.factory;
 
 import slf4d;
+import core.sync.rwmutex;
 
 /** 
  * A basic LoggerFactory implementation that just creates a `Logger` with a
@@ -13,6 +14,7 @@ class DefaultLoggerFactory : LoggerFactory {
     private shared LogHandler handler;
     private Level rootLoggingLevel;
     private ModuleLoggingLevelMapping[] moduleMappings;
+    private shared ReadWriteMutex mutex;
 
     /** 
      * Constructs the factory with the given handler, and optionally a root
@@ -26,6 +28,7 @@ class DefaultLoggerFactory : LoggerFactory {
     public shared this(shared LogHandler handler, Level rootLoggingLevel = Levels.INFO) {
         this.handler = handler;
         this.rootLoggingLevel = rootLoggingLevel;
+        this.mutex = new shared ReadWriteMutex();
     }
 
     /** 
@@ -34,7 +37,9 @@ class DefaultLoggerFactory : LoggerFactory {
      *   level = The root logging level.
      */
     public shared void setRootLevel(Level level) {
-        this.rootLoggingLevel = level;
+        synchronized(this.mutex.writer) {
+            this.rootLoggingLevel = level;
+        }
     }
 
     /** 
@@ -45,7 +50,9 @@ class DefaultLoggerFactory : LoggerFactory {
      *           given module pattern.
      */
     public shared void setModuleLevel(string modulePattern, Level level) {
-        this.moduleMappings ~= ModuleLoggingLevelMapping(modulePattern, level);
+        synchronized(this.mutex.writer) {
+            this.moduleMappings ~= ModuleLoggingLevelMapping(modulePattern, level);
+        }
     }
 
     /** 
@@ -58,13 +65,15 @@ class DefaultLoggerFactory : LoggerFactory {
      */
     public shared Logger getLogger(string name = __MODULE__) {
         import std.algorithm : startsWith;
-        Level level = this.rootLoggingLevel;
-        foreach (mapping; this.moduleMappings) {
-            if (startsWith(name, mapping.modulePattern)) {
-                level = mapping.level;
+        synchronized(this.mutex.reader) {
+            Level level = this.rootLoggingLevel;
+            foreach (mapping; this.moduleMappings) {
+                if (startsWith(name, mapping.modulePattern)) {
+                    level = mapping.level;
+                }
             }
+            return Logger(this.handler, level, name);
         }
-        return Logger(this.handler, level, name);
     }
 }
 

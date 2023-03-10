@@ -1,5 +1,7 @@
 /**
- * This module contains extensible factory components for creating loggers.
+ * This module defines the `LoggerFactory`, a component that's part of a
+ * LoggingProvider's implementation, and produces `Logger` instances to use at
+ * runtime.
  */
 module slf4d.factory;
 
