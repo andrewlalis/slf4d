@@ -38,7 +38,7 @@ public string formatTimestamp(SysTime timestamp, bool colored) {
  * Returns: The formatted string.
  */
 public string formatLogLevel(Level level, bool colored) {
-    import std.range : padLeft, array;
+    import std.string : leftJustify;
 
     string s = level.name;
     size_t originalLength = s.length;
@@ -59,7 +59,7 @@ public string formatLogLevel(Level level, bool colored) {
         }
         s = colorStr ~ s ~ "\033[0m";
     }
-    return cast(string) padLeft(s, ' ', 5 + (s.length - originalLength)).array;
+    return leftJustify(s, 5 + (s.length - originalLength), ' ');
 }
 
 /** 
@@ -71,7 +71,7 @@ public string formatLogLevel(Level level, bool colored) {
  * Returns: The formatted logger name string.
  */
 public string formatLoggerName(string name, bool colored) {
-    import std.range : padRight, array;
+    import std.string : rightJustify;
     const size_t loggerNameLength = 24;
 
     name = compactLoggerName(name, loggerNameLength);
@@ -80,7 +80,7 @@ public string formatLoggerName(string name, bool colored) {
     if (colored) {
         name = "\033[33m" ~ name ~ "\033[0m";
     }
-    return cast(string) padRight(name, ' ', loggerNameLength + (name.length - originalNameLength)).array;
+    return rightJustify(name, loggerNameLength + (name.length - originalNameLength), ' ');
 }
 
 public string compactLoggerName(string name, size_t maxLength) {
