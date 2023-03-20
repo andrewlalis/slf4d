@@ -83,6 +83,14 @@ public string formatLoggerName(string name, bool colored) {
     return rightJustify(name, loggerNameLength + (name.length - originalNameLength), ' ');
 }
 
+/**
+ * Compacts the logger's name so that it fits within a specified length, and
+ * is still somewhat legible.
+ * Params:
+ *   name = The logger's name.
+ *   maxLength = The max length of the name.
+ * Returns: The compacted logger name.
+ */
 public string compactLoggerName(string name, size_t maxLength) {
     if (name.length <= maxLength) return name;
     return "..." ~ name[3 + $ - maxLength .. $];
@@ -104,6 +112,13 @@ unittest {
     assertNameCompacted("module1.module2", 10, "...module2");
 }
 
+/**
+ * Formats a log message's exception info.
+ * Params:
+ *   info = The exception info.
+ *   colored = Whether the output should be colored.
+ * Returns: The formatted exception string.
+ */
 public string formatExceptionInfo(ExceptionInfo info, bool colored) {
     import std.format : format;
     string exceptionName = info.exceptionClassName;
@@ -124,6 +139,5 @@ public string formatExceptionInfo(ExceptionInfo info, bool colored) {
         }
         titleMessage ~= "\n" ~ traceStr;
     }
-
     return titleMessage;
 }

@@ -20,9 +20,9 @@ class DefaultLogHandler : LogHandler {
     /** 
      * Constructs a default log handler.
      * Params:
-     *   colored = Whether to apply ANSI color codes to output. True by default.
+     *   colored = Whether to apply ANSI color codes to output. False by default.
      */
-    public shared this(bool colored = true) {
+    public shared this(bool colored = false) {
         this.colored = colored;
     }
 

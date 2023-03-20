@@ -22,7 +22,7 @@ class DefaultProvider : LoggingProvider {
      *   rootLoggingLevel = The root logging level for all Loggers created by
      *                      this provider's factory.
      */
-    public shared this(bool colored = true, Level rootLoggingLevel = Levels.INFO) {
+    public shared this(bool colored = false, Level rootLoggingLevel = Levels.INFO) {
         this.handler = new shared DefaultLogHandler(colored);
         this.loggerFactory = new shared DefaultLoggerFactory(this.handler, rootLoggingLevel);
     }
