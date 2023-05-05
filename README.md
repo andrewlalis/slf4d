@@ -8,81 +8,87 @@
 
 ![DUB](https://img.shields.io/dub/v/slf4d?color=%23c10000ff%20&style=flat-square) ![DUB](https://img.shields.io/dub/dt/slf4d?style=flat-square) ![DUB](https://img.shields.io/dub/l/slf4d?style=flat-square) ![GitHub Workflow Status (with branch)](https://img.shields.io/github/actions/workflow/status/andrewlalis/slf4d/run-tests.yml?branch=main&label=tests&style=flat-square)
 
-Simple Logging Facade for D, inspired by SLF4J. Add it to your project with `dub add slf4d`, and start logging sensibly!
+Simple Logging Facade for D, inspired by SLF4J. `dub add slf4d`, and start logging sensibly!
 
-[Read the documentation here!](https://andrewlalis.github.io/slf4d/)
+[Read the full documentation here!](https://andrewlalis.github.io/slf4d/)
 
-SLF4D provides a common interface and core logging features, while allowing third-party providers to handle log messages produced at runtime. Take a look at the following example, where we get a logger from SLF4D and write an *info* message.
+SLF4D acts as a common interface for logging messages during an application's runtime. Let's see an example of how you can use it:
 
 ```d
 import slf4d;
 
 void main() {
-    auto log = getLogger();
-    log.info("Hello world!");
+    info("Hello world!");
+    try {
+        int result = doStuff();
+        infoF!"Result = %d"(result);
+    } catch (Exception e) {
+        error("Failed to do stuff.", e);
+    }
 }
 ```
 
-You can also define a module-level logger instead, using a `static this` initializer:
+> Output:
+> ```
+> app INFO  2023-05-05T15:50:46.087 Hello world!
+> app INFO  2023-05-05T15:50:46.087 Result = 84
+> ```
+>
+> In this example, we're implicitly using SLF4D's [DefaultProvider](https://andrewlalis.github.io/slf4d/ddoc/slf4d.default_provider.provider.DefaultProvider.html) to log messages using some of the available [log functions](https://andrewlalis.github.io/slf4d/ddoc/slf4d.log_functions.html).
+>
+> Also note the log message format of `<module> <level> <timestamp> <message>`. This is just how the default provider formats messages, but the format is entirely customizable using a different provider.
 
-```d
-import slf4d;
 
-private Logger log;
-static this {
-    log = getLogger();
-}
 
-void main() {
-    log.info("Hello world!");
-}
-```
+## Usage
 
-## Logging Methods
+To start using SLF4D in your project, all you need to do is add it as a dependency to your dub project, and `import slf4d;` wherever you need it.
 
-The following table gives a brief outline of the available logging methods provided by an SLF4D `Logger` struct obtained via `log = getLogger();`
+Consider checking out [examples/basic-usage](https://github.com/andrewlalis/slf4d/tree/main/examples/basic-usage) for a quick overview, if you don't fancy reading.
+
+### Log Functions
+
+The following table gives an overview of the functions that are available when you `import slf4d;`
 | Level | Basic | Formatted |
 |---    |---    |---        |
-| TRACE | `log.trace("Message")` | `log.traceF!"Message %d"(42)` |
-| DEBUG | `log.debug_("Message")`* | `log.debugF!"Message %d"(42)` |
-| INFO | `log.info("Message")` | `log.infoF!"Message %d"(42)` |
-| WARN | `log.warn("Message")` | `log.warnF!"Message %d"(42)` |
-| ERROR | `log.error("Message")` | `log.errorF!"Message %d"(42)` |
-> \* Because `debug` is a keyword in D, `debug_` is used as the method name.
+| TRACE | `trace("Message")` | `traceF!"Message %d"(42)` |
+| DEBUG | `debug_("Message")`* | `debugF!"Message %d"(42)` |
+| INFO | `info("Message")` | `infoF!"Message %d"(42)` |
+| WARN | `warn("Message")` | `warnF!"Message %d"(42)` |
+| ERROR | `error("Message")` | `errorF!"Message %d"(42)` |
+> \* Because `debug` is a keyword in D, `debug_` is used as the function name.
 
-Each **basic** function also accepts an Exception as an argument:
+Each function can also accept an `Exception` after its usual message or arguments, and it'll include it in the log message. Third-party providers can even configure additional logic for what to do if an exception is logged.
+
 ```d
 try {
     doSomethingDangerous();
 } catch (Exception e) {
-    log.warn("Uh oh, something went wrong.", e);
-    // Or let SLF4D derive the message from the exception:
-    log.error(e);
+    warn("Uh oh, something went wrong.", e);
+    error(e); // Or let SLF4D use the exception's message
 }
 ```
 
-### Builders
+### Loggers
 
-In addition to the log methods described above, the Logger also provides a set of _builder_ methods that give you a `LogBuilder` with a fluent interface for building log messages.
+Behind the scenes, the role of the _Logging Provider_ is to provide SLF4D with a [Logger](https://andrewlalis.github.io/slf4d/ddoc/slf4d.logger.Logger.html) to forward any of the above log function calls to. Therefore, direct logging calls are just a convenient way of doing the following:
 
-| Level | Method |
-|---    |---     |
-| TRACE | `log.traceBuilder()` |
-| DEBUG | `log.debugBuilder()` |
-| INFO | `log.infoBuilder()` |
-| WARN | `log.warnBuilder()` |
-| ERROR | `log.errorBuilder()` |
-
-Here's an example of how a builder can be used:
 ```d
-auto log = getLogger();
-log.warnBuilder()
-    .msg("This is a warning message.")
-    .exc(new Exception("Oh no!"))
-    .log();
+Logger logger = getLogger();
+logger.info("Hello world!");
+
+// The above code is equivalent to this:
+info("Hello world!");
 ```
 
-## Configuring the Provider
+Usually, this distinction won't matter at all, but it's mentioned here for completeness' sake. However, Loggers enable you to override the logger's name, which defaults to the current D module's name. Suppose you want a logger whose name is `Test Logs`; then you should call your log functions on a Logger with that name:
+
+```d
+Logger logger = getLogger("Test Logs");
+logger.warn("A message");
+```
+
+### Configuring the Provider
 
 By default, SLF4D uses a built-in logging provider that simply writes log messages to stdout and stderr. However, if you'd like to use a third-party logging provider instead, or create your own custom provider, all you need to do is call `configureLoggingProvider()` when your application starts, to set the shared logging provider to use.
 
@@ -92,15 +98,27 @@ import some_slf4d_provider;
 
 void main() {
     configureLoggingProvider(new shared CustomProvider());
-    auto log = getLogger(); // Logger configured using provider.
+    info("This message is handled by the custom provider!");
 }
 ```
 
-## Testing
+### Builders
+
+In addition to the log functions described above, the Logger also provides a set of _builder_ methods that give you a [LogBuilder](https://andrewlalis.github.io/slf4d/ddoc/slf4d.logger.LogBuilder.html) with a fluent interface for building log messages.
+
+```d
+Logger logger = getLogger();
+logger.warnBuilder()
+    .msg("Building a warning message...")
+    .exc(new Exception("Oh no!"))
+    .log();
+```
+
+### Testing
 
 SLF4D is designed to be easy-to-use in unit testing, and it comes with a few purpose-built components to facilitate this.
 
-- The `slf4d.testing_provider` package defines a `TestingLoggingProvider` class that be used to help with recording any log messages that were sent to it.
+- The [slf4d.testing_provider](https://andrewlalis.github.io/slf4d/ddoc/slf4d.testing_provider.html) package defines a `TestingLoggingProvider` class that be used to help with recording any log messages that were sent to it.
 - Under the hood, it uses a `CachingLogHandler` from `slf4d.handler` which is a thread-safe handler for storing logged messages in memory for inspection.
 
 Here's an example.
@@ -115,7 +133,8 @@ unittest {
 
     callMySystemUnderTest();
 
-    assert(provider.messages.length == 3);
+    provider.assertMessageCount(3);
+    provider.assertHasMessage("Hello world!");
     assert(provider.messages[0].level == Levels.INFO);
     assert(provider.messages[1].message == "Hello world!");
 
@@ -125,15 +144,16 @@ unittest {
     callMyOtherSystemUnderTest();
 
     // Check that there are no warn/error messages.
-    foreach (msg; provider.messages) {
-        assert(msg.level.value < Levels.WARN.value);
-    }
+    provider.assertNoMessages(Levels.WARN);
+    provider.assertNoMessages(Levels.ERROR);
 }
 ```
 
 ## Making a Custom Provider
 
 To create a logging provider, simply implement the `LoggingProvider` interface defined in `slf4d.provider`. Note that your logging factory and handler should be `shared`, that is, they will be shared among all threads of an application which uses your provider. Consider using a mutex or `synchronized` in your handler or factory if it needs to access a shared resource.
+
+Check out [examples/custom-provider](https://github.com/andrewlalis/slf4d/tree/main/examples/custom-provider) for an example of how you can create such a logging provider.
 
 ## Why SLF4D?
 

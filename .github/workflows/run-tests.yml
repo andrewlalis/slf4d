@@ -49,10 +49,18 @@ jobs:
         with:
           compiler: ${{ matrix.compiler }}
       
-      - name: Validate basic-usage
+      - name: Validate basic-usage example
         working-directory: examples/basic-usage
         run: dub -q run
       
-      - name: Validate custom-provider
+      - name: Validate custom-provider example
         working-directory: examples/custom-provider
+        run: dub -q test
+
+      - name: Validate readme example
+        working-directory: examples/readme
+        run: dub -q run
+      
+      - name: Validate testing example
+        working-directory: examples/testing
         run: dub -q test

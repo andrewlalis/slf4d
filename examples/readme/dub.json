@@ -1,0 +1,14 @@
+{
+	"authors": [
+		"Andrew Lalis"
+	],
+	"copyright": "Copyright © 2023, Andrew Lalis",
+	"description": "Examples from this project's docs.",
+	"license": "MIT",
+	"name": "readme-examples",
+	"dependencies": {
+		"slf4d": {
+			"path": "../../"
+		}
+	}
+}

@@ -64,6 +64,100 @@ class TestingLoggingProvider : LoggingProvider {
         import std.algorithm : count;
         return cast(size_t) this.messages().count!(m => m.level == levelFilter);
     }
+
+    /** 
+     * Asserts that this provider has exactly an expected amount of messages.
+     * Params:
+     *   expected = The expected message count.
+     */
+    public shared void assertMessageCount(size_t expected) {
+        import std.format : format;
+        size_t actual = this.messageCount();
+        assert(actual == expected, format!"Actual message count %d does not match expected %d."(actual, expected));
+    }
+
+    /** 
+     * Asserts that this provider has exactly an expected amount of messages
+     * at the given logging level.
+     * Params:
+     *   level = The level to filter by.
+     *   expected = The expected message count.
+     */
+    public shared void assertMessageCount(Level level, size_t expected) {
+        import std.format : format;
+        size_t actual = this.messageCount(level);
+        assert(
+            actual == expected,
+            format!"Actual message count %d for level %s does not match expected %d."(actual, level.name, expected)
+        );
+    }
+
+    /** 
+     * Asserts that this provider has no cached messages.
+     */
+    public shared void assertNoMessages() {
+        this.assertMessageCount(0);
+    }
+
+    /** 
+     * Asserts that this provider has no cached messages at the given logging
+     * level.
+     * Params:
+     *   level = The level to filter by.
+     */
+    public shared void assertNoMessages(Level level) {
+        this.assertMessageCount(level, 0);
+    }
+
+    /** 
+     * Asserts that this provider has a cached log message that satisfies the
+     * given boolean delegate function.
+     * Params:
+     *   dg = A delegate function that takes a log message, and returns true if
+     *        the message matches, or false otherwise.
+     *   message = The message to show if no matching log messages are found.
+     */
+    public shared void assertHasMessage(
+        bool delegate(LogMessage) dg,
+        string message = "No matching log message for delegate function."
+    ) {
+        import std.algorithm : any;
+        assert(any!(m => dg(m))(this.messages()), message);
+    }
+
+    /** 
+     * Asserts that this provider has a cached log message with the given
+     * string message.
+     * Params:
+     *   expected = The expected string message.
+     *   caseSensitive = Whether to do a case-sensitive search. True by default.
+     */
+    public shared void assertHasMessage(string expected, bool caseSensitive = true) {
+        import std.format : format;
+        import std.string : toLower;
+        this.assertHasMessage(
+            (m) {
+                if (!caseSensitive) {
+                    return toLower(m.message) == toLower(expected);
+                }
+                return m.message == expected;
+            },
+            format!"Cached log messages do not contain expected message \"%s\"."(expected)
+        );
+    }
+
+    /** 
+     * Asserts that this provider has a cached log message with the given level.
+     * Params:
+     *   level = The logging level to look for.
+     */
+    public shared void assertHasMessage(Level level) {
+        import std.format : format;
+        this.assertHasMessage(
+            m => m.level == level,
+            format!"No cached log message with level %s."(level.name)
+        );
+    }
 }
 
 /** 
@@ -88,11 +182,18 @@ unittest {
 
     auto p = new shared TestingLoggingProvider();
     assert(p.messages.length == 0);
-    
+    p.assertMessageCount(0);
+    p.assertNoMessages();
 
     auto log = p.getLoggerFactory().getLogger();
     log.info("Testing");
     assert(p.messages.length == 1);
+    p.assertMessageCount(1);
+    p.assertMessageCount(Levels.INFO, 1);
+    p.assertMessageCount(Levels.WARN, 0);
+    p.assertNoMessages(Levels.ERROR);
+    p.assertHasMessage("Testing");
+    p.assertHasMessage("testing", false);
     p.reset();
     assert(p.messages.length == 0);
 }

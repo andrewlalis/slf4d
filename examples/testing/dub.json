@@ -1,0 +1,14 @@
+{
+	"authors": [
+		"Andrew Lalis"
+	],
+	"copyright": "Copyright © 2023, Andrew Lalis",
+	"description": "SLF4D examples for testing",
+	"license": "MIT",
+	"name": "testing",
+	"dependencies": {
+		"slf4d": {
+			"path": "../../"
+		}
+	}
+}
