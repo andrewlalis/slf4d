@@ -67,28 +67,10 @@ public void configureLoggingProvider(shared LoggingProvider provider) {
  */
 public shared(LoggingProvider) getLoggingProvider() {
     if (loggingProvider is null) {
-        version(unittest) {
-            import slf4d.testing_provider : TestingLoggingProvider;
-            loggingProvider = new shared TestingLoggingProvider();
-        } else {
-            import slf4d.default_provider : DefaultProvider;
-            loggingProvider = new shared DefaultProvider();
-        }
+        import slf4d.default_provider : DefaultProvider;
+        loggingProvider = new shared DefaultProvider();
     }
     return loggingProvider;
-}
-
-version(unittest) {
-    import slf4d.testing_provider : TestingLoggingProvider;
-
-    /** 
-     * Function that's available to unit tests that gets the current logging
-     * provider, and casts it to `TestingLoggingProvider`.
-     * Returns: The logging provider.
-     */
-    public shared(TestingLoggingProvider) getTestingProvider() {
-        return cast(shared(TestingLoggingProvider)) getLoggingProvider();
-    }
 }
 
 /** 
@@ -114,26 +96,22 @@ public Logger getLogger(string name = __MODULE__) {
 }
 
 /** 
- * Some components that are only available during testing, which are needed
- * for checking and mutating the global state in ways that are not permitted
- * in normal operation.
+ * Resets the logging state. Call this after your test, if you configured
+ * the global shared logging provider.
+ *
+ * Warning: This function is intended for use in tests, and should NOT be used
+ * in your normal application's logic.
  */
-version(unittest) {
-    import core.sync.mutex;
+public void resetLoggingState() {
+    loggingProvider = null;
+    atomicStore(loggingProviderSet, false);
+}
 
-    /** 
-     * An internal mutex to synchronize tests that affect the core logging state.
-     */
-    private shared Mutex loggingTestingMutex;
-
-    static this() {
-        loggingTestingMutex = new shared Mutex();
-    }
-
+unittest {
     /** 
      * Asserts that the logging state is not yet initialized.
      */
-    public void assertNotInitialized() {
+    void assertNotInitialized() {
         import std.format : format;
         assert(
             loggingProvider is null,
@@ -149,7 +127,7 @@ version(unittest) {
      * Asserts that the logging state has been initialized with a given
      * provider class.
      */
-    public void assertInitialized(ProviderClass)() {
+    void assertInitialized(ProviderClass)() {
         import std.format : format;
         import std.traits;
         assert(
@@ -169,20 +147,9 @@ version(unittest) {
         );
     }
 
-    /** 
-     * Resets the logging state. Call this after your test, if you configured
-     * the global shared logging provider.
-     */
-    public void resetLoggingState() {
-        loggingProvider = null;
-        loggingProviderSet = false;
-    }
-}
-
-// Test that a warning is issued if the provider is configured more than once.
-unittest {
-    import slf4d.testing_provider;
+    import slf4d.test;
     synchronized(loggingTestingMutex) {
+        // Test that a warning is issued if the provider is configured more than once.
         assertNotInitialized();
         auto provider = new shared TestingLoggingProvider();
         configureLoggingProvider(provider);
@@ -192,12 +159,8 @@ unittest {
         assertInitialized!TestingLoggingProvider();
         assert(provider.messageCount == 1 && provider.messageCount(Levels.WARN) == 1);
         resetLoggingState();
-    }
-}
 
-// Test that if `null` is given, the NoOpProvider is used.
-unittest {
-    synchronized(loggingTestingMutex) {
+        // Test that if `null` is given, the NoOpProvider is used.
         assertNotInitialized();
         configureLoggingProvider(null);
         import slf4d.noop_provider : NoOpProvider;
