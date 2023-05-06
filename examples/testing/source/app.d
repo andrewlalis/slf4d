@@ -17,9 +17,7 @@ void doStuff(int n) {
 
 unittest {
 	import slf4d;
-	import slf4d.testing_provider;
-	shared TestingLoggingProvider provider = new shared TestingLoggingProvider();
-	configureLoggingProvider(provider);
+	auto provider = getTestingProvider();
 
 	doStuff(5);
 	provider.assertMessageCount(Levels.INFO, 1);
