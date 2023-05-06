@@ -2,7 +2,7 @@
 
 When you incorporate logging into your application or library's logic, you should test that log messages are generated when you expect them to be, and that no log messages are generated when you're not expecting any.
 
-SLF4D offers a logging provider implementation specifically designed to make testing your logging behavior easy: the [TestingLoggingProvider](ddoc-slf4d.testing_provider.TestingLoggingProvider). In `unittest` blocks (i.e. when the `unittest` version switch is active), SLF4D will automatically initialize with this provider.
+SLF4D offers a logging provider implementation specifically designed to make testing your logging behavior easy: the [TestingLoggingProvider](ddoc-slf4d.testing_provider.TestingLoggingProvider). In `unittest` blocks, you can make use of this by importing the `slf4d.test` module.
 
 ## Example: Testing for Logs
 
@@ -20,9 +20,12 @@ string getFileContents(string filename) {
 }
 
 unittest {
-    auto testingProvider = getTestingProvider();
-    assert(getFileContents("missing-file") == "");
-    assert(testingProvider.messageCount == 1);
-    assert(testingProivder.messages[0].level == Levels.WARN);
+    import slf4d.test;
+    synchronized(loggingTestingMutex) {
+        auto testingProvider = getTestingProvider();
+        assert(getFileContents("missing-file") == "");
+        assert(testingProvider.messageCount == 1);
+        assert(testingProivder.messages[0].level == Levels.WARN);
+    }
 }
 ```
