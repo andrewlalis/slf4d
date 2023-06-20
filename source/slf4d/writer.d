@@ -239,16 +239,16 @@ class SerializingLogHandler : LogHandler {
 }
 
 unittest {
+    import std.file;
+    if (exists("test-logs")) {
+        rmdirRecurse("test-logs");
+    }
     import slf4d;
     import slf4d.default_provider.factory;
     auto handler = new shared SerializingLogHandler(
         new DefaultStringLogSerializer(),
         new RotatingFileLogWriter("test-logs")
     );
-    scope(exit) {
-        import std.file;
-        rmdirRecurse("test-logs");
-    }
     Logger logger = Logger(handler);
     logger.info("test");
     for (int i = 0; i < 1_000; i++) {
