@@ -43,8 +43,8 @@ class JsonLogSerializer : LogSerializer {
     string serialize(immutable LogMessage msg) {
         import std.json;
         import slf4d.default_provider.formatters;
-        JSONValue obj = JSONValue.emptyObject;
-        obj.object["level"] = JSONValue.emptyObject;
+        JSONValue obj = JSONValue(string[string].init);
+        obj.object["level"] = JSONValue(string[string].init);
         obj.object["level"].object["value"] = JSONValue(msg.level.value);
         obj.object["level"].object["name"] = JSONValue(msg.level.name);
         obj.object["message"] = JSONValue(msg.message);
@@ -55,7 +55,7 @@ class JsonLogSerializer : LogSerializer {
         } else {
             import slf4d.logger : ExceptionInfo;
             ExceptionInfo info = msg.exception.get();
-            obj.object["exception"] = JSONValue.emptyObject;
+            obj.object["exception"] = JSONValue(string[string].init);
             obj.object["exception"].object["message"] = JSONValue(info.message);
             obj.object["exception"].object["sourceFileName"] = JSONValue(info.sourceFileName);
             obj.object["exception"].object["sourceLineNumber"] = JSONValue(info.sourceLineNumber);
@@ -66,7 +66,7 @@ class JsonLogSerializer : LogSerializer {
                 obj.object["exception"].object["stackTrace"] = JSONValue(info.stackTrace.get());
             }
         }
-        obj.object["sourceContext"] = JSONValue.emptyObject;
+        obj.object["sourceContext"] = JSONValue(string[string].init);
         obj.object["sourceContext"].object["moduleName"] = JSONValue(msg.sourceContext.moduleName);
         obj.object["sourceContext"].object["functionName"] = JSONValue(msg.sourceContext.functionName);
         obj.object["sourceContext"].object["fileName"] = JSONValue(msg.sourceContext.fileName);
