@@ -330,3 +330,92 @@ unittest {
     logger4.trace("This too!");
     assert(baseHandler.messageCount == 2);
 }
+
+/** 
+ * A handler that serializes log messages to a string, and then writes them
+ * to some consumer, like a file writer or network client to send the logs
+ * somewhere. This handler requires a serializer function that takes a single
+ * immutable `LogMessage` argument and returns a `string` representation of
+ * it, and a message consumer shared object, that consumes serialized messages.
+ */
+class SerializingLogHandler : LogHandler {
+    public alias SerializerFunction = string function(immutable LogMessage);
+    private SerializerFunction serializer;
+    private shared SerializedMessageConsumer consumer;
+
+    public shared this(SerializerFunction serializer, shared SerializedMessageConsumer consumer) {
+        this.serializer = serializer;
+        this.consumer = consumer;
+    }
+
+    shared void handle(immutable LogMessage msg) {
+        import std.stdio;
+        try {
+            string rawMessage = this.serializer(msg);
+            try {
+                this.consumer.consume(rawMessage);
+            } catch (Exception e) {
+                stderr.writefln!"Failed to consume serialized log message: %s"(e.msg);
+            }
+        } catch (Exception e) {
+            stderr.writefln!"Failed to serialize log message: %s"(e.msg);
+        }
+    }
+}
+
+interface SerializedMessageConsumer {
+    shared void consume(string message);
+}
+
+class StdoutMessageConsumer : SerializedMessageConsumer {
+    shared void consume(string message) {
+        import std.stdio;
+        writeln(message);
+    }
+}
+
+public string serializeToJson(immutable LogMessage msg) {
+    import std.json;
+    import slf4d.default_provider.formatters;
+    JSONValue obj = JSONValue.emptyObject;
+    obj.object["level"] = JSONValue.emptyObject;
+    obj.object["level"].object["value"] = JSONValue(msg.level.value);
+    obj.object["level"].object["name"] = JSONValue(msg.level.name);
+    obj.object["message"] = JSONValue(msg.message);
+    obj.object["timestamp"] = JSONValue(formatTimestamp(msg.timestamp, false));
+    obj.object["loggerName"] = JSONValue(msg.loggerName);
+    if (msg.exception.isNull) {
+        obj.object["exception"] = JSONValue(null);
+    } else {
+        import slf4d.logger : ExceptionInfo;
+        ExceptionInfo info = msg.exception.get();
+        obj.object["exception"] = JSONValue.emptyObject;
+        obj.object["exception"].object["message"] = JSONValue(info.message);
+        obj.object["exception"].object["sourceFileName"] = JSONValue(info.sourceFileName);
+        obj.object["exception"].object["sourceLineNumber"] = JSONValue(info.sourceLineNumber);
+        obj.object["exception"].object["exceptionClassName"] = JSONValue(info.exceptionClassName);
+        if (info.stackTrace.isNull()) {
+            obj.object["exception"].object["stackTrace"] = JSONValue(null);
+        } else {
+            obj.object["exception"].object["stackTrace"] = JSONValue(info.stackTrace.get());
+        }
+    }
+    obj.object["sourceContext"] = JSONValue.emptyObject;
+    obj.object["sourceContext"].object["moduleName"] = JSONValue(msg.sourceContext.moduleName);
+    obj.object["sourceContext"].object["functionName"] = JSONValue(msg.sourceContext.functionName);
+    obj.object["sourceContext"].object["fileName"] = JSONValue(msg.sourceContext.fileName);
+    obj.object["sourceContext"].object["lineNumber"] = JSONValue(msg.sourceContext.lineNumber);
+    return obj.toString();
+}
+
+unittest {
+    import slf4d;
+    import slf4d.default_provider.factory;
+    auto handler = new shared SerializingLogHandler(
+        &serializeToJson,
+        new shared StdoutMessageConsumer()
+    );
+    auto factory = new shared DefaultLoggerFactory(handler, Levels.TRACE);
+    auto logger = factory.getLogger();
+    logger.info("test");
+}
