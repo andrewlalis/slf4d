@@ -9,6 +9,8 @@ import slf4d;
 
 /**
  * A component that serializes a log message into a string representation.
+ * Note that a serializer may be called from many threads at once; you should
+ * ensure it is thread-safe, or synchronize as needed.
  */
 interface LogSerializer {
     string serialize(immutable LogMessage msg);
@@ -76,18 +78,19 @@ class JsonLogSerializer : LogSerializer {
 }
 
 /**
- * A strategy for determining what file to write to, when writing serialized
- * log messages to some output resource.
+ * A log writer is a component that writes a serialized log message string to
+ * some output resource, like a file or network device. Note that because this
+ * write method may be called from many threads, it should be thread-safe, or
+ * appropriately synchronized.
  */
-interface LogFileStrategy {
-    import std.stdio;
-    ref File getFile();
+interface LogWriter {
+    void write(string message);
 }
 
 /**
- * A log file strategy that simply always writes to a single file.
+ * A log writer that always writes to the same file.
  */
-class SingleLogFileStrategy : LogFileStrategy {
+class SingleFileLogWriter : LogWriter {
     import std.stdio;
     private File file;
 
@@ -95,16 +98,19 @@ class SingleLogFileStrategy : LogFileStrategy {
         this.file = file;
     }
 
-    ref File getFile() {
-        return cast(File) this.file;
+    void write(string message) {
+        synchronized(this) {
+            this.file.writeln(message);
+            this.file.flush();
+        }
     }
 }
 
 /**
- * A log file strategy that writes to a series of log files in a directory,
- * where a new file is used once a maximum file size is reached.
+ * A log writer that writes log messages to files in a directory, switching to
+ * a new file when the current one reaches a set size (defaults to 2GB).
  */
-class RotatingLogFileStrategy : LogFileStrategy {
+class RotatingFileLogWriter : LogWriter {
     import std.stdio;
     import std.file;
     import std.path;
@@ -116,6 +122,15 @@ class RotatingLogFileStrategy : LogFileStrategy {
     private string logFilePrefix;
     private immutable ulong maxLogFileSize;
 
+    /**
+     * Constructs a new rotating log file strategy.
+     * Params:
+     *   logDir = The directory to store log files in. It will be created,
+     *            recursively, if it doesn't exist.
+     *   logFilePrefix = The prefix for all log files generated.
+     *   maxLogFileSize = The maximum size, in bytes, of log files. Defaults to
+     *                    2GB.
+     */
     public this(string logDir, string logFilePrefix = "log", ulong maxLogFileSize = 2_000_000_000) {
         this.logDir = logDir;
         this.logFilePrefix = logFilePrefix;
@@ -123,15 +138,22 @@ class RotatingLogFileStrategy : LogFileStrategy {
         this.initFile();
     }
 
-    ref File getFile() {
-        // Check if we need to close this file and open a new one.
-        if (getSize(this.currentFile.name) > this.maxLogFileSize) {
-            this.currentFile.close();
-            this.currentFile = File(getNextFileName(), "a");
+    void write(string message) {
+        synchronized(this) {
+            // Check if we need to close this file and open a new one.
+            if (getSize(this.currentFile.name) > this.maxLogFileSize) {
+                this.currentFile.close();
+                this.currentFile = File(getNextFileName(), "a");
+            }
+            this.currentFile.writeln(message);
+            this.currentFile.flush();
         }
-        return this.currentFile;
     }
 
+    /**
+     * Generates a log file name.
+     * Returns: A log file name.
+     */
     private string getNextFileName() {
         import std.datetime;
         SysTime now = Clock.currTime();
@@ -147,6 +169,9 @@ class RotatingLogFileStrategy : LogFileStrategy {
         return buildPath(this.logDir, filename);
     }
 
+    /** 
+     * Helper method for initially selecting the file that should be written to.
+     */
     private void initFile() {
         // If the log dir doesn't exist yet, make it and start a new file.
         if (!exists(this.logDir)) {
@@ -173,53 +198,20 @@ class RotatingLogFileStrategy : LogFileStrategy {
 }
 
 /**
- * A log writer is a component that writes a serialized log message string to
- * some output resource, like a file or network device.
- */
-interface LogWriter {
-    shared void write(string message);
-}
-
-/**
- * A log writer that writes messages to a file. The file that's used is
- * determined by the writer's `LogFileStrategy`. Some strategies may always use
- * the same file, and others may rotate log files, or overwrite old logs.
- */
-class FileLogWriter : LogWriter {
-    import std.stdio;
-
-    private LogFileStrategy strategy;
-
-    public this(LogFileStrategy strategy) {
-        this.strategy = strategy;
-    }
-
-    shared void write(string message) {
-        // Because this is a shared method, and our strategy isn't explicitly
-        // shared, we synchronize access to it.
-        File f;
-        synchronized(this) {
-            f = (cast(LogFileStrategy)this.strategy).getFile();
-        }
-        f.writeln(message);
-        f.flush();
-    }
-}
-
-/**
  * Writes logs to the standard output stream.
  */
-class StdoutLogWriter : FileLogWriter {
-    public this() {
-        import std.stdio : stdout, File;
-        super(new SingleLogFileStrategy(stdout));
+class StdoutLogWriter : LogWriter {
+    void write(string message) {
+        import std.stdio : writeln;
+        writeln(message);
     }
 }
 
 /**
  * A log handler that serializes incoming messages, and uses a `LogWriter` to
  * write them to some output resource, like a standard output stream, file, or
- * network device.
+ * network device. Most SLF4D providers will probably end up using some sort of
+ * serializing handler at the end of the day.
  */
 class SerializingLogHandler : LogHandler {
     private shared LogSerializer serializer;
@@ -236,7 +228,7 @@ class SerializingLogHandler : LogHandler {
             // We need to cast away this serializer's `shared` attribute to call serialize.
             string rawMessage = (cast(LogSerializer) this.serializer).serialize(msg);
             try {
-                this.writer.write(rawMessage);
+                (cast(LogWriter) this.writer).write(rawMessage);
             } catch (Exception e) {
                 stderr.writefln!"Failed to write log message: %s"(e.msg);
             }
@@ -250,9 +242,13 @@ unittest {
     import slf4d;
     import slf4d.default_provider.factory;
     auto handler = new shared SerializingLogHandler(
-        new JsonLogSerializer(),
-        new FileLogWriter(new RotatingLogFileStrategy("test-logs"))
+        new DefaultStringLogSerializer(),
+        new RotatingFileLogWriter("test-logs")
     );
+    scope(exit) {
+        import std.file;
+        rmdirRecurse("test-logs");
+    }
     Logger logger = Logger(handler);
     logger.info("test");
     for (int i = 0; i < 1_000; i++) {
