@@ -21,19 +21,15 @@ interface LogSerializer {
  * provider does, which is <module> <level> <timestamp> <message>, roughly.
  */
 class DefaultStringLogSerializer : LogSerializer {
+    private immutable bool terminalColors;
+
+    public this(bool terminalColors = false) {
+        this.terminalColors = terminalColors;
+    }
+
     string serialize(immutable LogMessage msg) {
-        import std.string;
-        import slf4d.default_provider.formatters;
-        string logStr = format!"%s %s %s %s"(
-            formatLoggerName(msg.loggerName, false),
-            formatLogLevel(msg.level, false),
-            formatTimestamp(msg.timestamp, false),
-            msg.message
-        );
-        if (!msg.exception.isNull) {
-            logStr ~= "\n" ~ formatExceptionInfo(msg.exception.get(), false);
-        }
-        return logStr;
+        import slf4d.default_provider.formatters : formatLogMessage;
+        return formatLogMessage(msg, this.terminalColors);
     }
 }
 

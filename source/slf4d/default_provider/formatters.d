@@ -1,8 +1,26 @@
 module slf4d.default_provider.formatters;
 
 import slf4d.level;
-import slf4d.logger : ExceptionInfo;
+import slf4d.logger : LogMessage, ExceptionInfo;
 import std.datetime : SysTime;
+
+/**
+ * Formats a full log message.
+ * Params:
+ *   msg = The message to format.
+ *   colored = Whether to color the message.
+ * Returns: The formatted message string.
+ */
+public string formatLogMessage(immutable LogMessage msg, bool colored) {
+    string logStr = formatLoggerName(msg.loggerName, colored) ~ " " ~
+        formatLogLevel(msg.level, colored) ~ " " ~
+        formatTimestamp(msg.timestamp, colored) ~ " " ~
+        msg.message;
+    if (!msg.exception.isNull()) {
+        logStr ~= "\n" ~ formatExceptionInfo(msg.exception.get(), colored);
+    }
+    return logStr;
+}
 
 /** 
  * Formats the log message's timestamp as a limited ISO-8601 format that's

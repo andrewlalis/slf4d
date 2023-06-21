@@ -64,6 +64,7 @@ module.exports = {
             'using-slf4d',
             'configuring',
             'testing',
+            'default-provider',
           ]
         }
       ],

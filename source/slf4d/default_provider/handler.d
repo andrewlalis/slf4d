@@ -34,19 +34,7 @@ class DefaultLogHandler : LogHandler {
      */
     public shared void handle(immutable LogMessage msg) {
         import std.stdio;
-
-        string prefixStr = format!"%s %s %s"(
-            formatLoggerName(msg.loggerName, this.colored),
-            formatLogLevel(msg.level, this.colored),
-            formatTimestamp(msg.timestamp, this.colored)
-        );
-
-        string logStr = prefixStr ~ " " ~ msg.message;
-        if (!msg.exception.isNull) {
-            ExceptionInfo info = msg.exception.get();
-            logStr ~= "\n" ~ formatExceptionInfo(info, this.colored);
-        }
-
+        string logStr = formatLogMessage(msg, this.colored);
         if (msg.level.value >= Levels.ERROR.value) {
             stderr.writeln(logStr);
         } else {
@@ -57,7 +45,7 @@ class DefaultLogHandler : LogHandler {
 
 unittest {
     import slf4d.default_provider.provider;
-    auto factory = new shared DefaultProvider().getLoggerFactory();
+    auto factory = new shared DefaultProvider(false, Levels.INFO, null).getLoggerFactory();
     factory.setRootLevel(Levels.TRACE);
     Logger log = factory.getLogger();
     log.error("Testing default provider error message.");
