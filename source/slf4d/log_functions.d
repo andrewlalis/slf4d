@@ -80,7 +80,11 @@ public void logF(string fmt, T...)(
     string fileName = __FILE__,
     size_t lineNumber = __LINE__
 ) {
-    getLogger(moduleName).logF!(fmt, T)(level, args, exception, moduleName, functionName, fileName, lineNumber);
+    auto logger = getLogger(moduleName);
+    if (logger.level.value <= level.value) {
+        import std.format : format;
+        logger.log(level, format!(fmt)(args), exception, moduleName, functionName, fileName, lineNumber);
+    }
 }
 
 /** 
@@ -143,7 +147,11 @@ public void traceF(string fmt, T...)(
     string fileName = __FILE__,
     size_t lineNumber = __LINE__
 ) {
-    logF!(fmt, T)(Levels.TRACE, args, exception, moduleName, functionName, fileName, lineNumber);
+    auto logger = getLogger(moduleName);
+    if (logger.level.value <= Levels.TRACE.value) {
+        import std.format : format;
+        logger.log(Levels.TRACE, format!(fmt)(args), exception, moduleName, functionName, fileName, lineNumber);
+    }
 }
 
 /** 
@@ -206,7 +214,11 @@ public void debugF(string fmt, T...)(
     string fileName = __FILE__,
     size_t lineNumber = __LINE__
 ) {
-    logF!(fmt, T)(Levels.DEBUG, args, exception, moduleName, functionName, fileName, lineNumber);
+    auto logger = getLogger(moduleName);
+    if (logger.level.value <= Levels.DEBUG.value) {
+        import std.format : format;
+        logger.log(Levels.DEBUG, format!(fmt)(args), exception, moduleName, functionName, fileName, lineNumber);
+    }
 }
 
 /** 
@@ -269,7 +281,11 @@ public void infoF(string fmt, T...)(
     string fileName = __FILE__,
     size_t lineNumber = __LINE__
 ) {
-    logF!(fmt, T)(Levels.INFO, args, exception, moduleName, functionName, fileName, lineNumber);
+    auto logger = getLogger(moduleName);
+    if (logger.level.value <= Levels.INFO.value) {
+        import std.format : format;
+        logger.log(Levels.INFO, format!(fmt)(args), exception, moduleName, functionName, fileName, lineNumber);
+    }
 }
 
 /** 
@@ -332,7 +348,11 @@ public void warnF(string fmt, T...)(
     string fileName = __FILE__,
     size_t lineNumber = __LINE__
 ) {
-    logF!(fmt, T)(Levels.WARN, args, exception, moduleName, functionName, fileName, lineNumber);
+    auto logger = getLogger(moduleName);
+    if (logger.level.value <= Levels.WARN.value) {
+        import std.format : format;
+        logger.log(Levels.WARN, format!(fmt)(args), exception, moduleName, functionName, fileName, lineNumber);
+    }
 }
 
 /** 
@@ -395,5 +415,33 @@ public void errorF(string fmt, T...)(
     string fileName = __FILE__,
     size_t lineNumber = __LINE__
 ) {
-    logF!(fmt, T)(Levels.ERROR, args, exception, moduleName, functionName, fileName, lineNumber);
+    auto logger = getLogger(moduleName);
+    if (logger.level.value <= Levels.ERROR.value) {
+        import std.format : format;
+        logger.log(Levels.ERROR, format!(fmt)(args), exception, moduleName, functionName, fileName, lineNumber);
+    }
+}
+
+unittest {
+    import slf4d.test;
+    synchronized (loggingTestingMutex) {
+        shared TestingLoggingProvider provider = getTestingProvider();
+        
+        // Test formatted functions without any format specifiers.
+        logF!"Testing"(Levels.INFO);
+        provider.assertHasMessage("Testing");
+
+        traceF!"Testing trace"();
+        provider.assertHasMessage("Testing trace");
+        debugF!"Testing debug"();
+        provider.assertHasMessage("Testing debug");
+        infoF!"Testing info"();
+        provider.assertHasMessage("Testing info");
+        warnF!"Testing warn"();
+        provider.assertHasMessage("Testing warn");
+        errorF!"Testing error"();
+        provider.assertHasMessage("Testing error");
+
+        resetLoggingState();
+    }
 }

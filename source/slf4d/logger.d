@@ -27,8 +27,8 @@ import std.typecons : Nullable, nullable;
  */
 struct Logger {
     private shared LogHandler handler;
-    private const Level level;
-    private const string name;
+    public const Level level;
+    public const string name;
 
     /** 
      * Initializes a new logger. Usually, you won't use this constructor, and
@@ -375,6 +375,14 @@ struct Logger {
         import slf4d.testing_provider;
         auto p = new shared TestingLoggingProvider();
         Logger log = p.getLoggerFactory().getLogger();
+
+        log.log(Levels.INFO, "Hello world");
+        assert(p.messageCount == 1);
+        log.logF!"Test %d"(Levels.WARN, 24);
+        assert(p.messageCount == 2);
+        log.logF!"Testing without args"(Levels.INFO);
+        assert(p.messageCount == 3);
+        p.reset();
 
         log.trace("Test");
         log.trace(new Exception("Oh no!"));
