@@ -430,7 +430,6 @@ unittest {
         // Test formatted functions without any format specifiers.
         logF!"Testing"(Levels.INFO);
         provider.assertHasMessage("Testing");
-
         traceF!"Testing trace"();
         provider.assertHasMessage("Testing trace");
         debugF!"Testing debug"();
@@ -441,6 +440,11 @@ unittest {
         provider.assertHasMessage("Testing warn");
         errorF!"Testing error"();
         provider.assertHasMessage("Testing error");
+        provider.reset();
+
+        // Test formatted functions with argument and an exception.
+        Exception exc = new Exception("Uh oh");
+        // logF!"Testing logF %d"(Levels.INFO, 42, exc); TODO: Get this to work somehow!
 
         resetLoggingState();
     }

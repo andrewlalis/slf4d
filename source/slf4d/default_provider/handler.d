@@ -37,8 +37,10 @@ class DefaultLogHandler : LogHandler {
         string logStr = formatLogMessage(msg, this.colored);
         if (msg.level.value >= Levels.ERROR.value) {
             stderr.writeln(logStr);
+            stderr.flush();
         } else {
             stdout.writeln(logStr);
+            stdout.flush();
         }
     }
 }
