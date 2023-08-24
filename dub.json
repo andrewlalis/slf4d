@@ -5,5 +5,8 @@
 	"copyright": "Copyright © 2023, Andrew Lalis",
 	"description": "Simple Logging Facade For D",
 	"license": "MIT",
-	"name": "slf4d"
+	"name": "slf4d",
+	"buildRequirements": [
+		"allowWarnings"
+	]
 }
