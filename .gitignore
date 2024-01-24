@@ -13,3 +13,4 @@ slf4d-test-*
 *.obj
 *.lst
 *.a
+test-logs/
