@@ -22,7 +22,7 @@ class DefaultLogHandler : LogHandler {
      * Params:
      *   colored = Whether to apply ANSI color codes to output. False by default.
      */
-    public shared this(bool colored = false) {
+    public this(bool colored = false) {
         this.colored = colored;
     }
 
@@ -32,7 +32,7 @@ class DefaultLogHandler : LogHandler {
      * Params:
      *   msg = The message that was produced.
      */
-    public shared void handle(immutable LogMessage msg) {
+    public void handle(immutable LogMessage msg) {
         import std.stdio;
         string logStr = formatLogMessage(msg, this.colored);
         if (msg.level.value >= Levels.ERROR.value) {
@@ -47,7 +47,7 @@ class DefaultLogHandler : LogHandler {
 
 unittest {
     import slf4d.default_provider.provider;
-    auto factory = new shared DefaultProvider(false, Levels.INFO, null).getLoggerFactory();
+    auto factory = new DefaultProvider(false, Levels.INFO, null).getLoggerFactory();
     factory.setRootLevel(Levels.TRACE);
     Logger log = factory.getLogger();
     log.error("Testing default provider error message.");

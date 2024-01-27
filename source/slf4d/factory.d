@@ -19,5 +19,5 @@ interface LoggerFactory {
      *   name = The name associated with the logger. This will default to the
      *          current module name, which is sufficient for most use cases.
      */
-    shared Logger getLogger(string name = __MODULE__);
+    Logger getLogger(string name = __MODULE__);
 }

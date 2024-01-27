@@ -17,13 +17,14 @@ void doStuff(int n) {
 
 unittest {
 	import slf4d.test;
-	// Since we're testing how our code interacts with the global state,
-	// we should make sure no other tests can modify it at the same time.
-	synchronized(loggingTestingMutex) {
-		// Check the docs for `getTestingProvider()`. It resets the logging
-		// state and gives you a new `TestingLoggingProvider` instance.
-		auto provider = getTestingProvider();
-
+	/*
+	Since we're testing how our function affects the global logging state, we
+	need to test it in isolation from all other logging. Therefore, we can call
+	useTestingProvider() and provide a delegate function that takes an instance
+	of a TestingLoggingProvider. This code will be executed in a clean logging
+	state, to make sure results are consistent.
+	*/
+	useTestingProvider((TestingLoggingProvider provider) {
 		doStuff(5);
 		provider.assertMessageCount(Levels.INFO, 1);
 		provider.assertMessageCount(Levels.TRACE, 5);
@@ -32,5 +33,5 @@ unittest {
 		doStuff(3);
 		provider.assertHasMessage(Levels.WARN);
 		provider.assertHasMessage("N is too low: 3");
-	}
+	});
 }

@@ -15,7 +15,7 @@ import std.typecons;
  * The default provider class.
  */
 class DefaultProvider : LoggingProvider {
-    private shared DefaultLoggerFactory loggerFactory;
+    private DefaultLoggerFactory loggerFactory;
 
     /** 
      * Constructs the default provider.
@@ -26,29 +26,28 @@ class DefaultProvider : LoggingProvider {
      *   logFileDir = A directory in which to write log files. If `null`, no
      *     files are written.
      */
-    public shared this(
+    public this(
         bool colored = false,
         Level rootLoggingLevel = Levels.INFO,
         string logFileDir = null
     ) {
-        shared LogHandler[] handlers = [new shared DefaultLogHandler(colored)];
+        LogHandler[] handlers = [new DefaultLogHandler(colored)];
         if (logFileDir !is null && logFileDir.length > 0) {
             import slf4d.writer;
-            handlers ~= new shared SerializingLogHandler(
+            handlers ~= new SerializingLogHandler(
                 new DefaultStringLogSerializer(false),
                 new RotatingFileLogWriter(logFileDir)
             );
         }
-        auto baseHandler = new shared MultiLogHandler(handlers);
-        this.loggerFactory = new shared DefaultLoggerFactory(baseHandler, rootLoggingLevel);
+        auto baseHandler = new MultiLogHandler(handlers);
+        this.loggerFactory = new DefaultLoggerFactory(baseHandler, rootLoggingLevel);
     }
     
     /** 
-     * Getter method to get this provider's internal factory. It will lazily
-     * initialize the factory if it hasn't already been initialized.
+     * Getter method to get this provider's internal factory.
      * Returns: The logger factory.
      */
-    public shared shared(DefaultLoggerFactory) getLoggerFactory() {
+    public DefaultLoggerFactory getLoggerFactory() {
         return this.loggerFactory;
     }
 }

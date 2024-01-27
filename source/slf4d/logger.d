@@ -13,9 +13,7 @@ import std.typecons : Nullable, nullable;
  * The logger is the core component of SLF4D. Use it to generate log messages
  * in your code. An ad-hoc Logger can be created and used anywhere, but usually
  * you'll want to use the `getLogger()` function to obtain a pre-configured
- * Logger that has been set up with an application-specific LogHandler. The
- * configured LogHandler is marked as `shared`, because only one root handler
- * instance exists per application.
+ * Logger that has been set up with an application-specific LogHandler.
  * 
  * Note that the D language offers some special keywords like `__MODULE__` and
  * `__PRETTY_FUNCTION__` which at compile time resolve to the respective source
@@ -26,7 +24,7 @@ import std.typecons : Nullable, nullable;
  * to these keywords, and you shouldn't need to ever provide a value for these.
  */
 struct Logger {
-    private shared LogHandler handler;
+    private LogHandler handler;
     public const Level level;
     public const string name;
 
@@ -40,7 +38,7 @@ struct Logger {
      *   name = The name of the logger. It defaults to the name of the module
      *          where the logger was initialized.
      */
-    public this(shared LogHandler handler, Level level = Levels.TRACE, string name = __MODULE__) {
+    public this(LogHandler handler, Level level = Levels.TRACE, string name = __MODULE__) {
         this.handler = handler;
         this.level = level;
         this.name = name;
@@ -68,7 +66,7 @@ struct Logger {
 
     // Test the basic `log` method to ensure log messages are filtered according to the Logger's level.
     unittest {
-        auto handler = new shared CachingLogHandler();
+        auto handler = new CachingLogHandler();
         Logger log = Logger(handler, Levels.INFO);
 
         // Test logging something that's of a sufficient level.
@@ -373,7 +371,7 @@ struct Logger {
     // General test for all functions.
     unittest {
         import slf4d.testing_provider;
-        auto p = new shared TestingLoggingProvider();
+        auto p = new TestingLoggingProvider();
         Logger log = p.getLoggerFactory().getLogger();
 
         log.log(Levels.INFO, "Hello world");

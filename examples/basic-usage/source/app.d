@@ -17,7 +17,7 @@ void main() {
 	
 	// Because we are using the default provider, its LoggerFactory supports setting the log level.
 	import slf4d.default_provider : DefaultLoggerFactory;
-	shared DefaultLoggerFactory factory = cast(shared DefaultLoggerFactory) getLoggerFactory();
+	DefaultLoggerFactory factory = cast(DefaultLoggerFactory) getLoggerFactory();
 	factory.setRootLevel(Levels.TRACE);
 
 	trace("This trace message should show up.");

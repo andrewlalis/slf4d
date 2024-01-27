@@ -23,7 +23,7 @@ import core.atomic;
  * box with SLF4D, but it's intended for applications to change this via the
  * `configureLoggingProvider` function on application startup.
  */
-private shared LoggingProvider loggingProvider;
+private LoggingProvider loggingProvider;
 
 /** 
  * An internal flag that's set once the logging provider is configured, and
@@ -40,9 +40,8 @@ private shared bool loggingProviderSet = false;
  *   provider = The logging provider to use. If `null` is given then SFL4D will
  *              use its built-in `NoOpProvider` from `slf4d.noop_provider`.
  */
-public void configureLoggingProvider(shared LoggingProvider provider) {
-    bool alreadySet = atomicLoad(loggingProviderSet);
-    if (alreadySet) {
+public void configureLoggingProvider(LoggingProvider provider) {
+    if (atomicLoad(loggingProviderSet)) {
         Logger logger = getLogger();
         static immutable string fmt = "The SLF4D logging provider has already been " ~
         "configured with the provider %s. Re-configuring the logging provider " ~
@@ -52,7 +51,7 @@ public void configureLoggingProvider(shared LoggingProvider provider) {
     }
     if (provider is null) {
         import slf4d.noop_provider : NoOpProvider;
-        loggingProvider = new shared NoOpProvider();
+        loggingProvider = new NoOpProvider();
     } else {
         loggingProvider = provider;
     }
@@ -65,10 +64,10 @@ public void configureLoggingProvider(shared LoggingProvider provider) {
  * provider will be used (or testing provider for unit tests).
  * Returns: The logging provider.
  */
-public shared(LoggingProvider) getLoggingProvider() {
+public LoggingProvider getLoggingProvider() {
     if (loggingProvider is null) {
         import slf4d.default_provider : DefaultProvider;
-        loggingProvider = new shared DefaultProvider();
+        loggingProvider = new DefaultProvider();
     }
     return loggingProvider;
 }
@@ -79,7 +78,7 @@ public shared(LoggingProvider) getLoggingProvider() {
  * `DefaultProvider` is used.
  * Returns: The logger factory.
  */
-public shared(LoggerFactory) getLoggerFactory() {
+public LoggerFactory getLoggerFactory() {
     return getLoggingProvider().getLoggerFactory();
 }
 
@@ -151,7 +150,7 @@ unittest {
     synchronized(loggingTestingMutex) {
         // Test that a warning is issued if the provider is configured more than once.
         assertNotInitialized();
-        auto provider = new shared TestingLoggingProvider();
+        auto provider = new TestingLoggingProvider();
         configureLoggingProvider(provider);
         assert(loggingProviderSet == true, "loggingProviderSet is not true after configuring the logging provider.");
         // Now try and configure it again. A warning message should be produced.
@@ -159,6 +158,7 @@ unittest {
         assertInitialized!TestingLoggingProvider();
         assert(provider.messageCount == 1 && provider.messageCount(Levels.WARN) == 1);
         resetLoggingState();
+        assertNotInitialized();
 
         // Test that if `null` is given, the NoOpProvider is used.
         assertNotInitialized();

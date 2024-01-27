@@ -210,21 +210,21 @@ class StdoutLogWriter : LogWriter {
  * serializing handler at the end of the day.
  */
 class SerializingLogHandler : LogHandler {
-    private shared LogSerializer serializer;
-    private shared LogWriter writer;
+    private LogSerializer serializer;
+    private LogWriter writer;
 
-    public shared this(LogSerializer serializer, LogWriter writer) {
-        this.serializer = cast(shared(LogSerializer)) serializer;
-        this.writer = cast(shared(LogWriter)) writer;
+    public this(LogSerializer serializer, LogWriter writer) {
+        this.serializer = serializer;
+        this.writer = writer;
     }
 
-    shared void handle(immutable LogMessage msg) {
+    void handle(immutable LogMessage msg) {
         import std.stdio;
         try {
             // We need to cast away this serializer's `shared` attribute to call serialize.
-            string rawMessage = (cast(LogSerializer) this.serializer).serialize(msg);
+            string rawMessage = this.serializer.serialize(msg);
             try {
-                (cast(LogWriter) this.writer).write(rawMessage);
+                this.writer.write(rawMessage);
             } catch (Exception e) {
                 stderr.writefln!"Failed to write log message: %s"(e.msg);
             }
@@ -241,7 +241,7 @@ unittest {
     }
     import slf4d;
     import slf4d.default_provider.factory;
-    auto handler = new shared SerializingLogHandler(
+    auto handler = new SerializingLogHandler(
         new DefaultStringLogSerializer(),
         new RotatingFileLogWriter("test-logs")
     );
