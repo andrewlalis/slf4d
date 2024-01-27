@@ -7,9 +7,8 @@ import slf4d.factory;
 
 /** 
  * This interface should be implemented by any logging provider, such that they
- * supply a shared LoggerFactory that will be used by an application. Note that
- * the provider itself must also be shared.
+ * supply a LoggerFactory that will be used by an application.
  */
 interface LoggingProvider {
-    shared shared(LoggerFactory) getLoggerFactory();
+    LoggerFactory getLoggerFactory();
 }

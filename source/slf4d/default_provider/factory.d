@@ -14,10 +14,10 @@ import core.sync.rwmutex;
  * example, only show debug messages from a single module.
  */
 class DefaultLoggerFactory : LoggerFactory {
-    private shared LogHandler handler;
+    private LogHandler handler;
     private Level rootLoggingLevel;
     private ModuleLoggingLevelMapping[] moduleMappings;
-    private shared ReadWriteMutex mutex;
+    private ReadWriteMutex mutex;
 
     /** 
      * Constructs the factory with the given handler, and optionally a root
@@ -28,10 +28,10 @@ class DefaultLoggerFactory : LoggerFactory {
      *   assigned to all Loggers produced by this factory, unless a module
      *   specific level is set.
      */
-    public shared this(shared LogHandler handler, Level rootLoggingLevel = Levels.INFO) {
+    public this(LogHandler handler, Level rootLoggingLevel = Levels.INFO) {
         this.handler = handler;
         this.rootLoggingLevel = rootLoggingLevel;
-        this.mutex = new shared ReadWriteMutex();
+        this.mutex = new ReadWriteMutex();
     }
 
     /** 
@@ -39,7 +39,7 @@ class DefaultLoggerFactory : LoggerFactory {
      * Params:
      *   level = The root logging level.
      */
-    public shared void setRootLevel(Level level) {
+    public void setRootLevel(Level level) {
         synchronized(this.mutex.writer) {
             this.rootLoggingLevel = level;
         }
@@ -59,10 +59,10 @@ class DefaultLoggerFactory : LoggerFactory {
      *   level = The logging level to apply to Loggers whose name matches the
      *           given module pattern.
      */
-    public shared void setModuleLevel(string modulePattern, Level level) {
+    public void setModuleLevel(string modulePattern, Level level) {
         synchronized(this.mutex.writer) {
-            this.moduleMappings ~= shared ModuleLoggingLevelMapping(
-                cast(shared(Regex!char)) regex(modulePattern),
+            this.moduleMappings ~= ModuleLoggingLevelMapping(
+                regex(modulePattern),
                 level
             );
         }
@@ -78,7 +78,7 @@ class DefaultLoggerFactory : LoggerFactory {
      *   level = The logging level to apply to Loggers whose name matches the
      *           given module prefix.
      */
-    public shared void setModuleLevelPrefix(string modulePrefix, Level level) {
+    public void setModuleLevelPrefix(string modulePrefix, Level level) {
         string pattern = "^" ~ replaceAll(modulePrefix, regex("\\."), "\\.") ~ ".*";
         this.setModuleLevel(pattern, level);
     }
@@ -91,12 +91,12 @@ class DefaultLoggerFactory : LoggerFactory {
      *   name = The logger's name, which defaults to the current module name.
      * Returns: The Logger.
      */
-    public shared Logger getLogger(string name = __MODULE__) {
+    public Logger getLogger(string name = __MODULE__) {
         import std.algorithm : startsWith;
         synchronized(this.mutex.reader) {
             Level level = this.rootLoggingLevel;
             foreach (mapping; this.moduleMappings) {
-                if (matchFirst(name, cast(Regex!char)mapping.modulePattern)) {
+                if (matchFirst(name, mapping.modulePattern)) {
                     level = mapping.level;
                 }
             }
@@ -117,9 +117,9 @@ package struct ModuleLoggingLevelMapping {
 
 unittest {
     import slf4d.handler;
-    auto handler = new shared CachingLogHandler();
+    auto handler = new CachingLogHandler();
 
-    auto f1 = new shared DefaultLoggerFactory(handler, Levels.INFO);
+    auto f1 = new DefaultLoggerFactory(handler, Levels.INFO);
     Logger log1 = f1.getLogger();
     log1.debug_("Testing");
     assert(handler.messageCount() == 0);
@@ -134,7 +134,7 @@ unittest {
     handler.reset();
 
     // Test setModuleLevel regular expression matching.
-    auto f2 = new shared DefaultLoggerFactory(handler, Levels.WARN);
+    auto f2 = new DefaultLoggerFactory(handler, Levels.WARN);
     f2.setModuleLevel("^my_module\\.a$", Levels.DEBUG);
     f2.setModuleLevel("^my_module\\.b$", Levels.TRACE);
     Logger log3 = f2.getLogger("my_module.a"); // First a logger that matches the first module level.
@@ -163,7 +163,7 @@ unittest {
     handler.reset();
 
     // Test setModuleLevelPrefix matching.
-    auto f3 = new shared DefaultLoggerFactory(handler, Levels.WARN);
+    auto f3 = new DefaultLoggerFactory(handler, Levels.WARN);
     f3.setModuleLevelPrefix("first_mod.second_mod", Levels.TRACE);
     f3.setModuleLevelPrefix("first_mod.third_mod.", Levels.DEBUG);
     Logger log6 = f3.getLogger("first_mod.second_mod"); // A logger that matches the first module level.

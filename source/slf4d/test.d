@@ -26,10 +26,10 @@ public import slf4d.testing_provider;
  * you acquire a testing lock, that you release it afterwards with
  * `releaseLoggingTestingLock()`.
  */
-public shared Mutex loggingTestingMutex;
+public __gshared Mutex loggingTestingMutex;
 
 static this() {
-    loggingTestingMutex = new shared Mutex();
+    loggingTestingMutex = new Mutex();
 }
 
 /** 
@@ -54,9 +54,34 @@ public void releaseLoggingTestingLock() {
  * a lock for the testing system (or synchronized on the mutex).
  * Returns: The logging provider.
  */
-public shared(TestingLoggingProvider) getTestingProvider() {
+public TestingLoggingProvider getTestingProvider() {
     resetLoggingState();
-    shared TestingLoggingProvider testingProvider = new shared TestingLoggingProvider();
+    TestingLoggingProvider testingProvider = new TestingLoggingProvider();
     configureLoggingProvider(testingProvider);
     return testingProvider;
+}
+
+/**
+ * Convenience function to acquire a lock on the SLF4D logging state and run
+ * some code, then reset the logging state and release the lock.
+ * Params:
+ *   dg = The code to run.
+ */
+public void withTestingLock(void delegate() dg) {
+    acquireLoggingTestingLock();
+    dg();
+    resetLoggingState();
+    releaseLoggingTestingLock();
+}
+
+/**
+ * Convenience function to acquire a lock on the testing state, run some code
+ * (in the provided delegate function), then release the lock.
+ * Params:
+ *   dg = The code to run with the testing logging provider.
+ */
+public void withTestingProvider(void delegate(TestingLoggingProvider) dg) {
+    acquireLoggingTestingLock();
+    dg(getTestingProvider());
+    releaseLoggingTestingLock();
 }

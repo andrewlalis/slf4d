@@ -18,37 +18,36 @@ import slf4d.level;
  * be a very simple handler that sends messages to stdout, or it could be a
  * more complex composition of handlers to distribute logs to various locations
  * according to filtering logic.
- *
- * Note that the handler is `shared`. One handler instance exists and is used
- * by all application threads.
  */
-shared interface LogHandler {
+interface LogHandler {
     /** 
      * Handles a log message.
      * Params:
      *   msg = The log message that was generated.
      */
-    shared void handle(immutable LogMessage msg);
+    void handle(immutable LogMessage msg);
 }
 
 /**
  * A log handler that discards all messages. Useful for testing.
  */
 class DiscardingLogHandler : LogHandler {
-    public shared void handle(immutable LogMessage msg) {
+    public void handle(immutable LogMessage msg) {
         // Do nothing.
     }
 }
 
 /**
  * A log handler that simply appends all messages it receives to an internal
- * array. This can be useful for testing.
+ * array. This can be useful for testing, but should not be used for general
+ * runtime logging due to the need to synchronize access to the internal
+ * message cache.
  */
-synchronized class CachingLogHandler : LogHandler {
+class CachingLogHandler : LogHandler {
     /**
      * The internal cache of messages.
      */
-    private shared LogMessage[] messages;
+    private LogMessage[] messages;
 
     /**
      * "Handles" a log message by appending it to this handler's internal list
@@ -56,15 +55,19 @@ synchronized class CachingLogHandler : LogHandler {
      * Params:
      *   msg = The message to handle.
      */
-    public shared void handle(immutable LogMessage msg) {
-        this.messages ~= msg;
+    public void handle(immutable LogMessage msg) {
+        synchronized(this) {
+            this.messages ~= msg;
+        }
     }
 
     /**
      * Resets this handler's internal message cache to an empty list.
      */
-    public shared void reset() {
-        this.messages = [];
+    public void reset() {
+        synchronized(this) {
+            this.messages = [];
+        }
     }
 
     /**
@@ -72,8 +75,10 @@ synchronized class CachingLogHandler : LogHandler {
      * handled since the last `reset()` call.
      * Returns: The list of messages.
      */
-    public shared LogMessage[] getMessages() {
-        return cast(LogMessage[]) messages.idup;
+    public LogMessage[] getMessages() {
+        synchronized(this) {
+            return cast(LogMessage[]) messages.idup;
+        }
     }
 
     /**
@@ -81,8 +86,10 @@ synchronized class CachingLogHandler : LogHandler {
      * `reset()` call.
      * Returns: The number of messages.
      */
-    public shared size_t messageCount() {
-        return messages.length;
+    public size_t messageCount() {
+        synchronized(this) {
+            return messages.length;
+        }
     }
 
     /**
@@ -90,14 +97,14 @@ synchronized class CachingLogHandler : LogHandler {
      * was called.
      * Returns: True if there are no messages, or false otherwise.
      */
-    public shared bool empty() {
-        return messages.length == 0;
+    public bool empty() {
+        return messageCount == 0;
     }
 }
 
 unittest {
     import slf4d.logger : Logger;
-    auto handler = new shared CachingLogHandler();
+    auto handler = new CachingLogHandler();
     auto logger = Logger(handler);
     assert(handler.getMessages().length == 0);
     logger.info("Hello world!");
@@ -111,7 +118,7 @@ unittest {
  * performance.
  */
 class MultiLogHandler : LogHandler {
-    private shared LogHandler[] handlers;
+    private LogHandler[] handlers;
 
     /**
      * Constructs this multi-log handler using the given list of sub-handlers.
@@ -119,7 +126,7 @@ class MultiLogHandler : LogHandler {
      *   handlers = The handlers that should each handle every message this
      *              multi-handler receives.
      */
-    public shared this(shared LogHandler[] handlers) {
+    public this(LogHandler[] handlers) {
         this.handlers = handlers;
     }
 
@@ -129,7 +136,7 @@ class MultiLogHandler : LogHandler {
      *   handler = The handler to add.
      * Returns: A reference to this multi-handler.
      */
-    public shared shared(MultiLogHandler) addHandler(shared LogHandler handler) {
+    public MultiLogHandler addHandler(LogHandler handler) {
         this.handlers ~= handler;
         return this;
     }
@@ -140,7 +147,7 @@ class MultiLogHandler : LogHandler {
      * Params:
      *   msg = The message to handle.
      */
-    public shared void handle(immutable LogMessage msg) {
+    public void handle(immutable LogMessage msg) {
         foreach (handler; handlers) {
             handler.handle(msg);
         }
@@ -149,9 +156,9 @@ class MultiLogHandler : LogHandler {
 
 unittest {
     import slf4d.logger : Logger;
-    auto h1 = new shared CachingLogHandler();
-    auto h2 = new shared CachingLogHandler();
-    auto multiHandler = new shared MultiLogHandler([h1, h2]);
+    auto h1 = new CachingLogHandler();
+    auto h2 = new CachingLogHandler();
+    auto multiHandler = new MultiLogHandler([h1, h2]);
     auto logger = Logger(multiHandler);
     logger.info("Hello world!");
     assert(h1.getMessages().length == 1);
@@ -164,14 +171,14 @@ unittest {
  */
 class FilterLogHandler : LogHandler {
     private bool function (LogMessage) filterFunction;
-    private shared LogHandler handler;
+    private LogHandler handler;
 
-    public shared this(shared LogHandler handler, bool function (LogMessage) filterFunction) {
+    public this(LogHandler handler, bool function (LogMessage) filterFunction) {
         this.handler = handler;
         this.filterFunction = filterFunction;
     }
 
-    shared void handle(immutable LogMessage msg) {
+    void handle(immutable LogMessage msg) {
         if (this.filterFunction(msg)) {
             this.handler.handle(msg);
         }
@@ -180,8 +187,8 @@ class FilterLogHandler : LogHandler {
 
 unittest {
     import slf4d.logger : Logger;
-    auto baseHandler = new shared CachingLogHandler();
-    auto filterHandler = new shared FilterLogHandler(
+    auto baseHandler = new CachingLogHandler();
+    auto filterHandler = new FilterLogHandler(
         baseHandler,
         (msg) {
             return msg.message.length > 10;
@@ -231,16 +238,16 @@ class LevelMappedLogHandler : LogHandler {
 
     private static struct Mapping {
         public const LevelRange range;
-        public shared LogHandler handler;
+        public LogHandler handler;
     }
 
     private Mapping[] mappings;
 
-    public shared void addLevelMapping(Level level, shared LogHandler handler) {
+    public void addLevelMapping(Level level, LogHandler handler) {
         this.mappings ~= Mapping(LevelRange.of(level.value), handler);
     }
 
-    public shared void addRangeLevelMapping(Level minLevel, Level maxLevel, shared LogHandler handler) {
+    public void addRangeLevelMapping(Level minLevel, Level maxLevel, LogHandler handler) {
         if (minLevel.value > maxLevel.value) {
             Level tmp = minLevel;
             minLevel = maxLevel;
@@ -249,19 +256,19 @@ class LevelMappedLogHandler : LogHandler {
         this.mappings ~= Mapping(LevelRange.of(minLevel.value, maxLevel.value), handler);
     }
 
-    public shared void addMinLevelMapping(Level minLevel, shared LogHandler handler) {
+    public void addMinLevelMapping(Level minLevel, LogHandler handler) {
         this.mappings ~= Mapping(LevelRange.ofMin(minLevel.value), handler);
     }
 
-    public shared void addMaxLevelMapping(Level maxLevel, shared LogHandler handler) {
+    public void addMaxLevelMapping(Level maxLevel, LogHandler handler) {
         this.mappings ~= Mapping(LevelRange.ofMax(maxLevel.value), handler);
     }
 
-    public shared void addAnyLevelMapping(shared LogHandler handler) {
+    public void addAnyLevelMapping(LogHandler handler) {
         this.mappings ~= Mapping(LevelRange.infinite, handler);
     }
 
-    public shared void handle(immutable LogMessage msg) {
+    public void handle(immutable LogMessage msg) {
         foreach (mapping; mappings) {
             if (
                 (!mapping.range.hasMinValue || msg.level.value >= mapping.range.minValue) &&
@@ -275,10 +282,10 @@ class LevelMappedLogHandler : LogHandler {
 
 unittest {
     import slf4d.logger : Logger;
-    auto baseHandler = new shared CachingLogHandler();
+    auto baseHandler = new CachingLogHandler();
     
     // Test single-level mappings.
-    auto handler = new shared LevelMappedLogHandler();
+    auto handler = new LevelMappedLogHandler();
     handler.addLevelMapping(Levels.INFO, baseHandler);
 
     Logger logger = Logger(handler);
@@ -293,7 +300,7 @@ unittest {
     baseHandler.reset();
     
     // Test range mappings.
-    handler = new shared LevelMappedLogHandler();
+    handler = new LevelMappedLogHandler();
     handler.addRangeLevelMapping(Levels.DEBUG, Levels.WARN, baseHandler);
 
     Logger logger2 = Logger(handler);
@@ -308,7 +315,7 @@ unittest {
     baseHandler.reset();
 
     // Test min mappings.
-    handler = new shared LevelMappedLogHandler();
+    handler = new LevelMappedLogHandler();
     handler.addMinLevelMapping(Levels.INFO, baseHandler);
 
     Logger logger3 = Logger(handler);
@@ -320,7 +327,7 @@ unittest {
     baseHandler.reset();
 
     // Test max mappings.
-    handler = new shared LevelMappedLogHandler();
+    handler = new LevelMappedLogHandler();
     handler.addMaxLevelMapping(Levels.WARN, baseHandler);
     
     Logger logger4 = Logger(handler);

@@ -20,13 +20,13 @@ class TestingLoggingProvider : LoggingProvider {
     /** 
      * The logger factory that this provider uses.
      */
-    public shared TestingLoggerFactory factory;
+    public TestingLoggerFactory factory;
 
-    public shared this() {
-        this.factory = new shared TestingLoggerFactory();
+    public this() {
+        this.factory = new TestingLoggerFactory();
     }
 
-    public shared shared(TestingLoggerFactory) getLoggerFactory() {
+    public TestingLoggerFactory getLoggerFactory() {
         return this.factory;
     }
 
@@ -35,14 +35,14 @@ class TestingLoggingProvider : LoggingProvider {
      * to this provider since the last time it was reset.
      * Returns: The messages that have been logged to this provider.
      */
-    public shared LogMessage[] messages() {
+    public LogMessage[] messages() {
         return this.factory.handler.getMessages();
     }
 
     /** 
      * Convenience method to clear this provider's cached list of messages.
      */
-    public shared void reset() {
+    public void reset() {
         this.factory.handler.reset();
     }
 
@@ -50,7 +50,7 @@ class TestingLoggingProvider : LoggingProvider {
      * Gets the number of messages that have been logged.
      * Returns: The number of messages that have been logged.
      */
-    public shared size_t messageCount() {
+    public size_t messageCount() {
         return this.factory.handler.messageCount;
     }
 
@@ -60,7 +60,7 @@ class TestingLoggingProvider : LoggingProvider {
      *   levelFilter = The level to filter by.
      * Returns: The number of messages that have been logged at the given level.
      */
-    public shared size_t messageCount(Level levelFilter) {
+    public size_t messageCount(Level levelFilter) {
         import std.algorithm : count;
         return cast(size_t) this.messages().count!(m => m.level == levelFilter);
     }
@@ -70,7 +70,7 @@ class TestingLoggingProvider : LoggingProvider {
      * Params:
      *   expected = The expected message count.
      */
-    public shared void assertMessageCount(size_t expected) {
+    public void assertMessageCount(size_t expected) {
         import std.format : format;
         size_t actual = this.messageCount();
         assert(actual == expected, format!"Actual message count %d does not match expected %d."(actual, expected));
@@ -83,7 +83,7 @@ class TestingLoggingProvider : LoggingProvider {
      *   level = The level to filter by.
      *   expected = The expected message count.
      */
-    public shared void assertMessageCount(Level level, size_t expected) {
+    public void assertMessageCount(Level level, size_t expected) {
         import std.format : format;
         size_t actual = this.messageCount(level);
         assert(
@@ -95,7 +95,7 @@ class TestingLoggingProvider : LoggingProvider {
     /** 
      * Asserts that this provider has no cached messages.
      */
-    public shared void assertNoMessages() {
+    public void assertNoMessages() {
         this.assertMessageCount(0);
     }
 
@@ -105,7 +105,7 @@ class TestingLoggingProvider : LoggingProvider {
      * Params:
      *   level = The level to filter by.
      */
-    public shared void assertNoMessages(Level level) {
+    public void assertNoMessages(Level level) {
         this.assertMessageCount(level, 0);
     }
 
@@ -117,7 +117,7 @@ class TestingLoggingProvider : LoggingProvider {
      *        the message matches, or false otherwise.
      *   message = The message to show if no matching log messages are found.
      */
-    public shared void assertHasMessage(
+    public void assertHasMessage(
         bool delegate(LogMessage) dg,
         string message = "No matching log message for delegate function."
     ) {
@@ -132,7 +132,7 @@ class TestingLoggingProvider : LoggingProvider {
      *   expected = The expected string message.
      *   caseSensitive = Whether to do a case-sensitive search. True by default.
      */
-    public shared void assertHasMessage(string expected, bool caseSensitive = true) {
+    public void assertHasMessage(string expected, bool caseSensitive = true) {
         import std.format : format;
         import std.string : toLower;
         this.assertHasMessage(
@@ -151,7 +151,7 @@ class TestingLoggingProvider : LoggingProvider {
      * Params:
      *   level = The logging level to look for.
      */
-    public shared void assertHasMessage(Level level) {
+    public void assertHasMessage(Level level) {
         import std.format : format;
         this.assertHasMessage(
             m => m.level == level,
@@ -165,14 +165,14 @@ class TestingLoggingProvider : LoggingProvider {
  * manner.
  */
 class TestingLoggerFactory : LoggerFactory {
-    public shared CachingLogHandler handler;
+    public CachingLogHandler handler;
     public Level logLevel = Levels.TRACE;
 
-    public shared this() {
-        this.handler = new shared CachingLogHandler();
+    public this() {
+        this.handler = new CachingLogHandler();
     }
 
-    shared Logger getLogger(string name = __MODULE__) {
+    Logger getLogger(string name = __MODULE__) {
         return Logger(this.handler, this.logLevel, name);
     }
 }
@@ -180,7 +180,7 @@ class TestingLoggerFactory : LoggerFactory {
 unittest {
     import slf4d;
 
-    auto p = new shared TestingLoggingProvider();
+    auto p = new TestingLoggingProvider();
     assert(p.messages.length == 0);
     p.assertMessageCount(0);
     p.assertNoMessages();

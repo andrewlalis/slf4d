@@ -425,7 +425,7 @@ public void errorF(string fmt, T...)(
 unittest {
     import slf4d.test;
     synchronized (loggingTestingMutex) {
-        shared TestingLoggingProvider provider = getTestingProvider();
+        TestingLoggingProvider provider = getTestingProvider();
         
         // Test formatted functions without any format specifiers.
         logF!"Testing"(Levels.INFO);

@@ -18,21 +18,21 @@ const Level NO_OP_LEVEL = Level(1_000_000, "NO-OP");
  * produces Loggers whose handler discards any log messages sent to them.
  */
 class NoOpProvider : LoggingProvider {
-    private shared NoOpLoggerFactory factory = new shared NoOpLoggerFactory();
+    private NoOpLoggerFactory factory = new NoOpLoggerFactory();
 
-    shared shared(LoggerFactory) getLoggerFactory() {
+    LoggerFactory getLoggerFactory() {
         return factory;
     }
 }
 
 package class NoOpLoggerFactory : LoggerFactory {
-    shared Logger getLogger(string name = __MODULE__) {
+    Logger getLogger(string name = __MODULE__) {
         return Logger(new DiscardingLogHandler(), NO_OP_LEVEL, name);
     }
 }
 
 unittest {
-    auto factory = new shared NoOpProvider().getLoggerFactory();
+    auto factory = new NoOpProvider().getLoggerFactory();
     auto log = factory.getLogger();
     log.info("This is discarded.");
     log.error("This is also discarded.");
