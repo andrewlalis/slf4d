@@ -21,11 +21,10 @@ string getFileContents(string filename) {
 
 unittest {
     import slf4d.test;
-    synchronized(loggingTestingMutex) {
-        auto testingProvider = getTestingProvider();
+    withTestingProvider((provider) {
         assert(getFileContents("missing-file") == "");
-        assert(testingProvider.messageCount == 1);
-        assert(testingProivder.messages[0].level == Levels.WARN);
-    }
+        assert(provider.messageCount == 1);
+        assert(proivder.messages[0].level == Levels.WARN);
+    });
 }
 ```

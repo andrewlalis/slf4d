@@ -11,7 +11,7 @@ import slf4d;
 import slf4d.default_provider;
 
 void main() {
-    auto provider = new shared DefaultProvider(
+    auto provider = new DefaultProvider(
         true,         // Enable colored output using ANSI color codes.
         Levels.DEBUG, // Only log messages that are DEBUG or higher (so no TRACE).
         "log-files"   // Also write log messages to files in the "log-files" dir.

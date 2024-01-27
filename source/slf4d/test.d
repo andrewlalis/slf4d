@@ -83,5 +83,6 @@ public void withTestingLock(void delegate() dg) {
 public void withTestingProvider(void delegate(TestingLoggingProvider) dg) {
     acquireLoggingTestingLock();
     dg(getTestingProvider());
+    resetLoggingState();
     releaseLoggingTestingLock();
 }

@@ -90,14 +90,14 @@ logger.warn("A message");
 
 ### Configuring the Provider
 
-By default, SLF4D uses a built-in logging provider that simply writes log messages to stdout and stderr. However, if you'd like to use a third-party logging provider instead, or create your own custom provider, all you need to do is call `configureLoggingProvider()` when your application starts, to set the shared logging provider to use.
+By default, SLF4D uses a built-in logging provider that simply writes log messages to stdout and stderr. However, if you'd like to use a third-party logging provider instead, or create your own custom provider, all you need to do is call `configureLoggingProvider()` when your application starts, to set the logging provider to use.
 
 ```d
 import slf4d;
 import some_slf4d_provider;
 
 void main() {
-    configureLoggingProvider(new shared CustomProvider());
+    configureLoggingProvider(new CustomProvider());
     info("This message is handled by the custom provider!");
 }
 ```
@@ -127,29 +127,31 @@ Here's an example.
 ```d
 unittest {
     import slf4d;
-    shared TestingLoggingProvider provider = getTestingProvider();
+    import slf4d.test;
 
-    callMySystemUnderTest();
+    withTestingProvider((provider) {
+        callMySystemUnderTest();
 
-    provider.assertMessageCount(3);
-    provider.assertHasMessage("Hello world!");
-    assert(provider.messages[0].level == Levels.INFO);
-    assert(provider.messages[1].message == "Hello world!");
+        provider.assertMessageCount(3);
+        provider.assertHasMessage("Hello world!");
+        assert(provider.messages[0].level == Levels.INFO);
+        assert(provider.messages[1].message == "Hello world!");
 
-    // Reset the testing provider to clear all log messages.
-    provider.reset();
+        // Reset the testing provider to clear all log messages.
+        provider.reset();
 
-    callMyOtherSystemUnderTest();
+        callMyOtherSystemUnderTest();
 
-    // Check that there are no warn/error messages.
-    provider.assertNoMessages(Levels.WARN);
-    provider.assertNoMessages(Levels.ERROR);
+        // Check that there are no warn/error messages.
+        provider.assertNoMessages(Levels.WARN);
+        provider.assertNoMessages(Levels.ERROR);
+    });
 }
 ```
 
 ## Making a Custom Provider
 
-To create a logging provider, simply implement the `LoggingProvider` interface defined in `slf4d.provider`. Note that your logging factory and handler should be `shared`, that is, they will be shared among all threads of an application which uses your provider. Consider using a mutex or `synchronized` in your handler or factory if it needs to access a shared resource.
+To create a logging provider, simply implement the `LoggingProvider` interface defined in `slf4d.provider`. Consider using a mutex or `synchronized` in your handler or factory if it needs to access a shared resource.
 
 Check out [examples/custom-provider](https://github.com/andrewlalis/slf4d/tree/main/examples/custom-provider) for an example of how you can create such a logging provider.
 

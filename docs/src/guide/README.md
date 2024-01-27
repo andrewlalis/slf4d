@@ -27,7 +27,7 @@ import my_lib;
 void main() {
     // In this example, we'll just be using SLF4D's default logging provider
     // but you can use any SLF4D provider.
-    auto provider = new shared DefaultProvider(true, Levels.DEBUG, "log-files");
+    auto provider = new DefaultProvider(true, Levels.DEBUG, "log-files");
     configureLoggingProvider(provider);
 
     myComplexFunction(42);
