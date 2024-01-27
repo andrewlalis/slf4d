@@ -20,11 +20,11 @@ unittest {
 	/*
 	Since we're testing how our function affects the global logging state, we
 	need to test it in isolation from all other logging. Therefore, we can call
-	useTestingProvider() and provide a delegate function that takes an instance
+	withTestingProvider() and provide a delegate function that takes an instance
 	of a TestingLoggingProvider. This code will be executed in a clean logging
 	state, to make sure results are consistent.
 	*/
-	useTestingProvider((TestingLoggingProvider provider) {
+	withTestingProvider((TestingLoggingProvider provider) {
 		doStuff(5);
 		provider.assertMessageCount(Levels.INFO, 1);
 		provider.assertMessageCount(Levels.TRACE, 5);
