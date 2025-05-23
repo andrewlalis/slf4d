@@ -19,7 +19,7 @@ import slf4d.level;
  * more complex composition of handlers to distribute logs to various locations
  * according to filtering logic.
  */
-interface LogHandler {
+shared interface LogHandler {
     /** 
      * Handles a log message.
      * Params:
@@ -32,7 +32,7 @@ interface LogHandler {
  * A log handler that discards all messages. Useful for testing.
  */
 class DiscardingLogHandler : LogHandler {
-    public void handle(immutable LogMessage msg) {
+    public void handle(immutable LogMessage msg) shared {
         // Do nothing.
     }
 }
@@ -43,7 +43,7 @@ class DiscardingLogHandler : LogHandler {
  * runtime logging due to the need to synchronize access to the internal
  * message cache.
  */
-class CachingLogHandler : LogHandler {
+shared class CachingLogHandler : LogHandler {
     /**
      * The internal cache of messages.
      */
@@ -55,7 +55,7 @@ class CachingLogHandler : LogHandler {
      * Params:
      *   msg = The message to handle.
      */
-    public void handle(immutable LogMessage msg) {
+    public void handle(immutable LogMessage msg) shared {
         synchronized(this) {
             this.messages ~= msg;
         }
@@ -117,8 +117,8 @@ unittest {
  * startup, because the `handle` method is not synchronized to improve
  * performance.
  */
-class MultiLogHandler : LogHandler {
-    private LogHandler[] handlers;
+shared class MultiLogHandler : LogHandler {
+    private shared(LogHandler)[] handlers;
 
     /**
      * Constructs this multi-log handler using the given list of sub-handlers.
@@ -126,7 +126,7 @@ class MultiLogHandler : LogHandler {
      *   handlers = The handlers that should each handle every message this
      *              multi-handler receives.
      */
-    public this(LogHandler[] handlers) {
+    public this(shared(LogHandler)[] handlers) {
         this.handlers = handlers;
     }
 
@@ -136,7 +136,7 @@ class MultiLogHandler : LogHandler {
      *   handler = The handler to add.
      * Returns: A reference to this multi-handler.
      */
-    public MultiLogHandler addHandler(LogHandler handler) {
+    public MultiLogHandler addHandler(shared(LogHandler) handler) {
         this.handlers ~= handler;
         return this;
     }
@@ -147,7 +147,7 @@ class MultiLogHandler : LogHandler {
      * Params:
      *   msg = The message to handle.
      */
-    public void handle(immutable LogMessage msg) {
+    public void handle(immutable LogMessage msg) shared {
         foreach (handler; handlers) {
             handler.handle(msg);
         }
@@ -169,11 +169,11 @@ unittest {
  * A handler that applies a filter to log messages, and only passes messages to
  * its internal handler if the filter returns `true`.
  */
-class FilterLogHandler : LogHandler {
+shared class FilterLogHandler : LogHandler {
     private bool function (LogMessage) filterFunction;
     private LogHandler handler;
 
-    public this(LogHandler handler, bool function (LogMessage) filterFunction) {
+    public this(shared(LogHandler) handler, bool function (LogMessage) filterFunction) {
         this.handler = handler;
         this.filterFunction = filterFunction;
     }
@@ -207,7 +207,7 @@ unittest {
  * handler that sends INFO messages to stdout, but sends ERROR messages to
  * an email notification service.
  */
-class LevelMappedLogHandler : LogHandler {
+shared class LevelMappedLogHandler : LogHandler {
 
     private static struct LevelRange {
         public const int minValue;
@@ -238,37 +238,37 @@ class LevelMappedLogHandler : LogHandler {
 
     private static struct Mapping {
         public const LevelRange range;
-        public LogHandler handler;
+        public shared(LogHandler) handler;
     }
 
     private Mapping[] mappings;
 
-    public void addLevelMapping(Level level, LogHandler handler) {
-        this.mappings ~= Mapping(LevelRange.of(level.value), handler);
+    public void addLevelMapping(Level level, shared(LogHandler) handler) {
+        this.mappings ~= cast(shared(Mapping)) Mapping(LevelRange.of(level.value), handler);
     }
 
-    public void addRangeLevelMapping(Level minLevel, Level maxLevel, LogHandler handler) {
+    public void addRangeLevelMapping(Level minLevel, Level maxLevel, shared(LogHandler) handler) {
         if (minLevel.value > maxLevel.value) {
             Level tmp = minLevel;
             minLevel = maxLevel;
             maxLevel = tmp;
         }
-        this.mappings ~= Mapping(LevelRange.of(minLevel.value, maxLevel.value), handler);
+        this.mappings ~= cast(shared(Mapping)) Mapping(LevelRange.of(minLevel.value, maxLevel.value), handler);
     }
 
-    public void addMinLevelMapping(Level minLevel, LogHandler handler) {
-        this.mappings ~= Mapping(LevelRange.ofMin(minLevel.value), handler);
+    public void addMinLevelMapping(Level minLevel, shared(LogHandler) handler) {
+        this.mappings ~= cast(shared(Mapping)) Mapping(LevelRange.ofMin(minLevel.value), handler);
     }
 
-    public void addMaxLevelMapping(Level maxLevel, LogHandler handler) {
-        this.mappings ~= Mapping(LevelRange.ofMax(maxLevel.value), handler);
+    public void addMaxLevelMapping(Level maxLevel, shared(LogHandler) handler) {
+        this.mappings ~= cast(shared(Mapping)) Mapping(LevelRange.ofMax(maxLevel.value), handler);
     }
 
-    public void addAnyLevelMapping(LogHandler handler) {
-        this.mappings ~= Mapping(LevelRange.infinite, handler);
+    public void addAnyLevelMapping(shared(LogHandler) handler) {
+        this.mappings ~= cast(shared(Mapping)) Mapping(LevelRange.infinite, handler);
     }
 
-    public void handle(immutable LogMessage msg) {
+    public void handle(immutable LogMessage msg) shared {
         foreach (mapping; mappings) {
             if (
                 (!mapping.range.hasMinValue || msg.level.value >= mapping.range.minValue) &&
@@ -282,7 +282,7 @@ class LevelMappedLogHandler : LogHandler {
 
 unittest {
     import slf4d.logger : Logger;
-    auto baseHandler = new CachingLogHandler();
+    CachingLogHandler baseHandler = new CachingLogHandler();
     
     // Test single-level mappings.
     auto handler = new LevelMappedLogHandler();

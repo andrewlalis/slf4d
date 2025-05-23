@@ -10,7 +10,7 @@ import slf4d.default_provider.formatters;
  * A default handler that just writes a formatted string to stdout, or stderr
  * in the case of WARNING or ERROR messages.
  */
-class DefaultLogHandler : LogHandler {
+shared class DefaultLogHandler : LogHandler {
     import std.datetime;
     import std.format : format;
     import std.range;
@@ -32,7 +32,7 @@ class DefaultLogHandler : LogHandler {
      * Params:
      *   msg = The message that was produced.
      */
-    public void handle(immutable LogMessage msg) {
+    public void handle(immutable LogMessage msg) shared {
         import std.stdio;
         string logStr = formatLogMessage(msg, this.colored);
         synchronized(this) {

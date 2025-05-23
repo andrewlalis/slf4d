@@ -10,5 +10,5 @@ import slf4d.factory;
  * supply a LoggerFactory that will be used by an application.
  */
 interface LoggingProvider {
-    LoggerFactory getLoggerFactory();
+    shared(LoggerFactory) getLoggerFactory() shared;
 }

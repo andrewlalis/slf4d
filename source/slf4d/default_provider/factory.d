@@ -13,7 +13,7 @@ import core.sync.rwmutex;
  * custom logging levels for individual module patterns, so that you can, for
  * example, only show debug messages from a single module.
  */
-class DefaultLoggerFactory : LoggerFactory {
+shared class DefaultLoggerFactory : LoggerFactory {
     private LogHandler handler;
     private Level rootLoggingLevel;
     private ModuleLoggingLevelMapping[] moduleMappings;
@@ -28,10 +28,10 @@ class DefaultLoggerFactory : LoggerFactory {
      *   assigned to all Loggers produced by this factory, unless a module
      *   specific level is set.
      */
-    public this(LogHandler handler, Level rootLoggingLevel = Levels.INFO) {
+    public this(shared LogHandler handler, Level rootLoggingLevel = Levels.INFO) {
         this.handler = handler;
         this.rootLoggingLevel = rootLoggingLevel;
-        this.mutex = new ReadWriteMutex();
+        this.mutex = new shared ReadWriteMutex();
     }
 
     /** 
@@ -61,7 +61,8 @@ class DefaultLoggerFactory : LoggerFactory {
      */
     public void setModuleLevel(string modulePattern, Level level) {
         synchronized(this.mutex.writer) {
-            this.moduleMappings ~= ModuleLoggingLevelMapping(
+            auto safeUnsharedMappings = cast(ModuleLoggingLevelMapping[]*) &this.moduleMappings;
+            *safeUnsharedMappings ~= ModuleLoggingLevelMapping(
                 regex(modulePattern),
                 level
             );
@@ -91,11 +92,12 @@ class DefaultLoggerFactory : LoggerFactory {
      *   name = The logger's name, which defaults to the current module name.
      * Returns: The Logger.
      */
-    public Logger getLogger(string name = __MODULE__) {
+    public Logger getLogger(string name = __MODULE__) shared {
         import std.algorithm : startsWith;
         synchronized(this.mutex.reader) {
             Level level = this.rootLoggingLevel;
-            foreach (mapping; this.moduleMappings) {
+            auto safeUnsharedMappings = cast(ModuleLoggingLevelMapping[]*) &this.moduleMappings;
+            foreach (mapping; *safeUnsharedMappings) {
                 if (matchFirst(name, mapping.modulePattern)) {
                     level = mapping.level;
                 }
@@ -139,6 +141,8 @@ unittest {
     f2.setModuleLevel("^my_module\\.b$", Levels.TRACE);
     Logger log3 = f2.getLogger("my_module.a"); // First a logger that matches the first module level.
     log3.info("Testing");
+    import std.stdio;
+    writeln(log3, handler.messageCount(), handler.getMessages());
     assert(handler.messageCount() == 1);
     log3.debug_("Testing debug");
     assert(handler.messageCount() == 2);

@@ -13,21 +13,21 @@ import slf4d;
  * ensure it is thread-safe, or synchronize as needed.
  */
 interface LogSerializer {
-    string serialize(immutable LogMessage msg);
+    string serialize(immutable LogMessage msg) shared;
 }
 
 /**
  * A log serializer that formats messages in the same way that SLF4D's default
  * provider does, which is <module> <level> <timestamp> <message>, roughly.
  */
-class DefaultStringLogSerializer : LogSerializer {
+shared class DefaultStringLogSerializer : LogSerializer {
     private immutable bool terminalColors;
 
     public this(bool terminalColors = false) {
         this.terminalColors = terminalColors;
     }
 
-    string serialize(immutable LogMessage msg) {
+    string serialize(immutable LogMessage msg) shared {
         import slf4d.default_provider.formatters : formatLogMessage;
         return formatLogMessage(msg, this.terminalColors);
     }
@@ -38,7 +38,7 @@ class DefaultStringLogSerializer : LogSerializer {
  * in the original log message struct.
  */
 class JsonLogSerializer : LogSerializer {
-    string serialize(immutable LogMessage msg) {
+    string serialize(immutable LogMessage msg) shared {
         import std.json;
         import slf4d.default_provider.formatters;
         JSONValue obj = JSONValue(string[string].init);
@@ -80,24 +80,25 @@ class JsonLogSerializer : LogSerializer {
  * appropriately synchronized.
  */
 interface LogWriter {
-    void write(string message);
+    void write(string message) shared;
 }
 
 /**
  * A log writer that always writes to the same file.
  */
-class SingleFileLogWriter : LogWriter {
+shared class SingleFileLogWriter : LogWriter {
     import std.stdio;
     private File file;
 
     public this(File file) {
-        this.file = file;
+        this.file = cast(shared(File)) file;
     }
 
-    void write(string message) {
+    void write(string message) shared {
         synchronized(this) {
-            this.file.writeln(message);
-            this.file.flush();
+            auto unsharedFile = cast(File*) &this.file;
+            unsharedFile.writeln(message);
+            unsharedFile.flush();
         }
     }
 }
@@ -106,7 +107,7 @@ class SingleFileLogWriter : LogWriter {
  * A log writer that writes log messages to files in a directory, switching to
  * a new file when the current one reaches a set size (defaults to 2GB).
  */
-class RotatingFileLogWriter : LogWriter {
+shared class RotatingFileLogWriter : LogWriter {
     import std.stdio;
     import std.file;
     import std.path;
@@ -136,13 +137,14 @@ class RotatingFileLogWriter : LogWriter {
 
     void write(string message) {
         synchronized(this) {
+            auto unsharedFile = cast(File*) &this.currentFile;
             // Check if we need to close this file and open a new one.
-            if (getSize(this.currentFile.name) > this.maxLogFileSize) {
-                this.currentFile.close();
-                this.currentFile = File(getNextFileName(), "a");
+            if (getSize(unsharedFile.name) > this.maxLogFileSize) {
+                unsharedFile.close();
+                *unsharedFile = File(getNextFileName(), "a");
             }
-            this.currentFile.writeln(message);
-            this.currentFile.flush();
+            unsharedFile.writeln(message);
+            unsharedFile.flush();
         }
     }
 
@@ -169,10 +171,11 @@ class RotatingFileLogWriter : LogWriter {
      * Helper method for initially selecting the file that should be written to.
      */
     private void initFile() {
+        auto unsharedFile = cast(File*) &this.currentFile;
         // If the log dir doesn't exist yet, make it and start a new file.
         if (!exists(this.logDir)) {
             mkdirRecurse(this.logDir);
-            this.currentFile = File(getNextFileName(), "a");
+            *unsharedFile = File(getNextFileName(), "a");
         } else {// Otherwise, search for the best file to continue from.
             DirEntry[] potentialFilesToContinue;
             foreach (DirEntry entry; dirEntries(this.logDir, SpanMode.shallow, false)) {
@@ -185,9 +188,9 @@ class RotatingFileLogWriter : LogWriter {
             }
             sort!((e1, e2) => e1.timeLastModified > e2.timeLastModified)(potentialFilesToContinue);
             if (potentialFilesToContinue.length > 0) {
-                this.currentFile = File(potentialFilesToContinue[0].name, "a");
+                *unsharedFile = File(potentialFilesToContinue[0].name, "a");
             } else {
-                this.currentFile = File(getNextFileName(), "a");
+                *unsharedFile = File(getNextFileName(), "a");
             }
         }
     }
@@ -197,7 +200,7 @@ class RotatingFileLogWriter : LogWriter {
  * Writes logs to the standard output stream.
  */
 class StdoutLogWriter : LogWriter {
-    void write(string message) {
+    void write(string message) shared {
         import std.stdio : writeln;
         writeln(message);
     }
@@ -209,11 +212,11 @@ class StdoutLogWriter : LogWriter {
  * network device. Most SLF4D providers will probably end up using some sort of
  * serializing handler at the end of the day.
  */
-class SerializingLogHandler : LogHandler {
+shared class SerializingLogHandler : LogHandler {
     private LogSerializer serializer;
     private LogWriter writer;
 
-    public this(LogSerializer serializer, LogWriter writer) {
+    public this(shared LogSerializer serializer, shared LogWriter writer) {
         this.serializer = serializer;
         this.writer = writer;
     }

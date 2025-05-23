@@ -17,16 +17,16 @@ const Level NO_OP_LEVEL = Level(1_000_000, "NO-OP");
  * The no-op provider class. This provider defines a logger factory that
  * produces Loggers whose handler discards any log messages sent to them.
  */
-class NoOpProvider : LoggingProvider {
+shared class NoOpProvider : LoggingProvider {
     private NoOpLoggerFactory factory = new NoOpLoggerFactory();
 
-    LoggerFactory getLoggerFactory() {
+    public NoOpLoggerFactory getLoggerFactory() shared {
         return factory;
     }
 }
 
-package class NoOpLoggerFactory : LoggerFactory {
-    Logger getLogger(string name = __MODULE__) {
+package shared class NoOpLoggerFactory : LoggerFactory {
+    Logger getLogger(string name = __MODULE__) shared {
         return Logger(new DiscardingLogHandler(), NO_OP_LEVEL, name);
     }
 }

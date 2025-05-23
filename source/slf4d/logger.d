@@ -24,7 +24,7 @@ import std.typecons : Nullable, nullable;
  * to these keywords, and you shouldn't need to ever provide a value for these.
  */
 struct Logger {
-    private LogHandler handler;
+    private shared LogHandler handler;
     public const Level level;
     public const string name;
 
@@ -38,7 +38,7 @@ struct Logger {
      *   name = The name of the logger. It defaults to the name of the module
      *          where the logger was initialized.
      */
-    public this(LogHandler handler, Level level = Levels.TRACE, string name = __MODULE__) {
+    public this(shared LogHandler handler, Level level = Levels.TRACE, string name = __MODULE__) {
         this.handler = handler;
         this.level = level;
         this.name = name;

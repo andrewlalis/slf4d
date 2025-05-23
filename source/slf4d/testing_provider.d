@@ -16,7 +16,7 @@ import slf4d.handler : CachingLogHandler;
  * that creates Loggers that send messages to a `CachingLogHandler` for
  * inspection.
  */
-class TestingLoggingProvider : LoggingProvider {
+shared class TestingLoggingProvider : LoggingProvider {
     /** 
      * The logger factory that this provider uses.
      */
@@ -26,7 +26,7 @@ class TestingLoggingProvider : LoggingProvider {
         this.factory = new TestingLoggerFactory();
     }
 
-    public TestingLoggerFactory getLoggerFactory() {
+    public TestingLoggerFactory getLoggerFactory() shared {
         return this.factory;
     }
 
@@ -164,7 +164,7 @@ class TestingLoggingProvider : LoggingProvider {
  * A convenient LoggerFactory implementation for testing logging in an isolated
  * manner.
  */
-class TestingLoggerFactory : LoggerFactory {
+shared class TestingLoggerFactory : LoggerFactory {
     public CachingLogHandler handler;
     public Level logLevel = Levels.TRACE;
 
@@ -172,7 +172,7 @@ class TestingLoggerFactory : LoggerFactory {
         this.handler = new CachingLogHandler();
     }
 
-    Logger getLogger(string name = __MODULE__) {
+    Logger getLogger(string name = __MODULE__) shared {
         return Logger(this.handler, this.logLevel, name);
     }
 }

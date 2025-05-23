@@ -23,7 +23,7 @@ import core.atomic;
  * box with SLF4D, but it's intended for applications to change this via the
  * `configureLoggingProvider` function on application startup.
  */
-private LoggingProvider loggingProvider;
+private shared LoggingProvider loggingProvider;
 
 /** 
  * An internal flag that's set once the logging provider is configured, and
@@ -40,7 +40,7 @@ private shared bool loggingProviderSet = false;
  *   provider = The logging provider to use. If `null` is given then SFL4D will
  *              use its built-in `NoOpProvider` from `slf4d.noop_provider`.
  */
-public void configureLoggingProvider(LoggingProvider provider) {
+public void configureLoggingProvider(shared LoggingProvider provider) {
     if (atomicLoad(loggingProviderSet)) {
         Logger logger = getLogger();
         static immutable string fmt = "The SLF4D logging provider has already been " ~
@@ -51,7 +51,7 @@ public void configureLoggingProvider(LoggingProvider provider) {
     }
     if (provider is null) {
         import slf4d.noop_provider : NoOpProvider;
-        loggingProvider = new NoOpProvider();
+        loggingProvider = new shared NoOpProvider();
     } else {
         loggingProvider = provider;
     }
@@ -64,7 +64,7 @@ public void configureLoggingProvider(LoggingProvider provider) {
  * provider will be used (or testing provider for unit tests).
  * Returns: The logging provider.
  */
-public LoggingProvider getLoggingProvider() {
+public shared(LoggingProvider) getLoggingProvider() {
     if (loggingProvider is null) {
         import slf4d.default_provider : DefaultProvider;
         loggingProvider = new DefaultProvider();
@@ -78,7 +78,7 @@ public LoggingProvider getLoggingProvider() {
  * `DefaultProvider` is used.
  * Returns: The logger factory.
  */
-public LoggerFactory getLoggerFactory() {
+public shared(LoggerFactory) getLoggerFactory() {
     return getLoggingProvider().getLoggerFactory();
 }
 
