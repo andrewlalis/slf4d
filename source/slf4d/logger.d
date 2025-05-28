@@ -8,6 +8,7 @@ import slf4d.level;
 import slf4d.handler;
 import std.datetime : Clock, SysTime;
 import std.typecons : Nullable, nullable;
+import std.file;
 
 /** 
  * The logger is the core component of SLF4D. Use it to generate log messages
@@ -102,6 +103,7 @@ struct Logger {
      *   level = The log level.
      *   msg = The string message to log.
      *   exception = The exception that prompted this log. This may be null.
+     *   attributes = Key-value pairs of additional user-defined attributes.
      *   moduleName = The name of the module. This will resolve to the current
      *                module name by default.
      *   functionName = The name of the function. This will resolve to the
@@ -115,18 +117,23 @@ struct Logger {
         Level level,
         string msg,
         Exception exception = null,
+        string[string] attributes = string[string].init,
         string moduleName = __MODULE__,
         string functionName = __PRETTY_FUNCTION__,
         string fileName = __FILE__,
         size_t lineNumber = __LINE__
     ) {
+        if (attributes is null) {
+            attributes = string[string].init;
+        }
         this.log(LogMessage(
             level,
             msg,
             this.name,
             Clock.currTime(),
             ExceptionInfo.from(exception),
-            LogMessageSourceContext(moduleName, functionName, fileName, lineNumber)
+            LogMessageSourceContext(moduleName, functionName, fileName, lineNumber),
+            cast(immutable(string[string])) attributes.dup
         ));
     }
 
@@ -136,6 +143,7 @@ struct Logger {
      * Params:
      *   level = The log level.
      *   exception = The exception that prompted this log.
+     *   attributes = Key-value pairs of additional user-defined attributes.
      *   moduleName = The name of the module. This will resolve to the current
      *                module name by default.
      *   functionName = The name of the function. This will resolve to the
@@ -148,13 +156,14 @@ struct Logger {
     public void log(
         Level level,
         Exception exception,
+        string[string] attributes = string[string].init,
         string moduleName = __MODULE__,
         string functionName = __PRETTY_FUNCTION__,
         string fileName = __FILE__,
         size_t lineNumber = __LINE__
     ) {
         string msg = exception.classinfo.name ~ ": " ~ exception.msg;
-        this.log(level, msg, exception, moduleName, functionName, fileName, lineNumber);
+        this.log(level, msg, exception, attributes, moduleName, functionName, fileName, lineNumber);
     }
 
     /** 
@@ -163,6 +172,7 @@ struct Logger {
      *   level = The log level.
      *   args = The arguments for the formatted string.
      *   exception = The exception that prompted this log. This may be null.
+     *   attributes = Key-value pairs of additional user-defined attributes.
      *   moduleName = The name of the module. This will resolve to the current
      *                module name by default.
      *   functionName = The name of the function. This will resolve to the
@@ -176,6 +186,7 @@ struct Logger {
         Level level,
         T args,
         Exception exception = null,
+        string[string] attributes = string[string].init,
         string moduleName = __MODULE__,
         string functionName = __PRETTY_FUNCTION__,
         string fileName = __FILE__,
@@ -183,7 +194,7 @@ struct Logger {
     ) {
         if (this.level.value <= level.value) {
             import std.format : format;
-            this.log(level, format!(fmt)(args), exception, moduleName, functionName, fileName, lineNumber);
+            this.log(level, format!(fmt)(args), exception, attributes, moduleName, functionName, fileName, lineNumber);
         }
     }
 
@@ -191,33 +202,36 @@ struct Logger {
     public void trace(
         string msg,
         Exception exception = null,
+        string[string] attributes = string[string].init,
         string moduleName = __MODULE__,
         string functionName = __PRETTY_FUNCTION__,
         string fileName = __FILE__,
         size_t lineNumber = __LINE__
     ) {
-        this.log(Levels.TRACE, msg, exception, moduleName, functionName, fileName, lineNumber);
+        this.log(Levels.TRACE, msg, exception, attributes, moduleName, functionName, fileName, lineNumber);
     }
 
     public void trace(
         Exception exception,
+        string[string] attributes = string[string].init,
         string moduleName = __MODULE__,
         string functionName = __PRETTY_FUNCTION__,
         string fileName = __FILE__,
         size_t lineNumber = __LINE__
     ) {
-        this.log(Levels.TRACE, exception, moduleName, functionName, fileName, lineNumber);
+        this.log(Levels.TRACE, exception, attributes, moduleName, functionName, fileName, lineNumber);
     }
 
     public void traceF(string fmt, T...)(
         T args,
         Exception exception = null,
+        string[string] attributes = string[string].init,
         string moduleName = __MODULE__,
         string functionName = __PRETTY_FUNCTION__,
         string fileName = __FILE__,
         size_t lineNumber = __LINE__
     ) {
-        this.logF!(fmt, T)(Levels.TRACE, args, exception, moduleName, functionName, fileName, lineNumber);
+        this.logF!(fmt, T)(Levels.TRACE, args, exception, attributes, moduleName, functionName, fileName, lineNumber);
     }
 
     public LogBuilder traceBuilder() {
@@ -227,33 +241,36 @@ struct Logger {
     public void debug_(
         string msg,
         Exception exception = null,
+        string[string] attributes = string[string].init,
         string moduleName = __MODULE__,
         string functionName = __PRETTY_FUNCTION__,
         string fileName = __FILE__,
         size_t lineNumber = __LINE__
     ) {
-        this.log(Levels.DEBUG, msg, exception, moduleName, functionName, fileName, lineNumber);
+        this.log(Levels.DEBUG, msg, exception, attributes, moduleName, functionName, fileName, lineNumber);
     }
 
     public void debug_(
         Exception exception,
+        string[string] attributes = string[string].init,
         string moduleName = __MODULE__,
         string functionName = __PRETTY_FUNCTION__,
         string fileName = __FILE__,
         size_t lineNumber = __LINE__
     ) {
-        this.log(Levels.DEBUG, exception, moduleName, functionName, fileName, lineNumber);
+        this.log(Levels.DEBUG, exception, attributes, moduleName, functionName, fileName, lineNumber);
     }
 
     public void debugF(string fmt, T...)(
         T args,
         Exception exception = null,
+        string[string] attributes = string[string].init,
         string moduleName = __MODULE__,
         string functionName = __PRETTY_FUNCTION__,
         string fileName = __FILE__,
         size_t lineNumber = __LINE__
     ) {
-        this.logF!(fmt, T)(Levels.DEBUG, args, exception, moduleName, functionName, fileName, lineNumber);
+        this.logF!(fmt, T)(Levels.DEBUG, args, exception, attributes, moduleName, functionName, fileName, lineNumber);
     }
 
     public LogBuilder debugBuilder() {
@@ -263,33 +280,36 @@ struct Logger {
     public void info(
         string msg,
         Exception exception = null,
+        string[string] attributes = string[string].init,
         string moduleName = __MODULE__,
         string functionName = __PRETTY_FUNCTION__,
         string fileName = __FILE__,
         size_t lineNumber = __LINE__
     ) {
-        this.log(Levels.INFO, msg, exception, moduleName, functionName, fileName, lineNumber);
+        this.log(Levels.INFO, msg, exception, attributes, moduleName, functionName, fileName, lineNumber);
     }
 
     public void info(
         Exception exception,
+        string[string] attributes = string[string].init,
         string moduleName = __MODULE__,
         string functionName = __PRETTY_FUNCTION__,
         string fileName = __FILE__,
         size_t lineNumber = __LINE__
     ) {
-        this.log(Levels.INFO, exception, moduleName, functionName, fileName, lineNumber);
+        this.log(Levels.INFO, exception, attributes, moduleName, functionName, fileName, lineNumber);
     }
 
     public void infoF(string fmt, T...)(
         T args,
         Exception exception = null,
+        string[string] attributes = string[string].init,
         string moduleName = __MODULE__,
         string functionName = __PRETTY_FUNCTION__,
         string fileName = __FILE__,
         size_t lineNumber = __LINE__
     ) {
-        this.logF!(fmt, T)(Levels.INFO, args, exception, moduleName, functionName, fileName, lineNumber);
+        this.logF!(fmt, T)(Levels.INFO, args, exception, attributes, moduleName, functionName, fileName, lineNumber);
     }
 
     public LogBuilder infoBuilder() {
@@ -299,33 +319,36 @@ struct Logger {
     public void warn(
         string msg,
         Exception exception = null,
+        string[string] attributes = string[string].init,
         string moduleName = __MODULE__,
         string functionName = __PRETTY_FUNCTION__,
         string fileName = __FILE__,
         size_t lineNumber = __LINE__
     ) {
-        this.log(Levels.WARN, msg, exception, moduleName, functionName, fileName, lineNumber);
+        this.log(Levels.WARN, msg, exception, attributes, moduleName, functionName, fileName, lineNumber);
     }
 
     public void warn(
         Exception exception,
+        string[string] attributes = string[string].init,
         string moduleName = __MODULE__,
         string functionName = __PRETTY_FUNCTION__,
         string fileName = __FILE__,
         size_t lineNumber = __LINE__
     ) {
-        this.log(Levels.WARN, exception, moduleName, functionName, fileName, lineNumber);
+        this.log(Levels.WARN, exception, attributes, moduleName, functionName, fileName, lineNumber);
     }
 
     public void warnF(string fmt, T...)(
         T args,
         Exception exception = null,
+        string[string] attributes = string[string].init,
         string moduleName = __MODULE__,
         string functionName = __PRETTY_FUNCTION__,
         string fileName = __FILE__,
         size_t lineNumber = __LINE__
     ) {
-        this.logF!(fmt, T)(Levels.WARN, args, exception, moduleName, functionName, fileName, lineNumber);
+        this.logF!(fmt, T)(Levels.WARN, args, exception, attributes, moduleName, functionName, fileName, lineNumber);
     }
 
     public LogBuilder warnBuilder() {
@@ -335,33 +358,36 @@ struct Logger {
     public void error(
         string msg,
         Exception exception = null,
+        string[string] attributes = string[string].init,
         string moduleName = __MODULE__,
         string functionName = __PRETTY_FUNCTION__,
         string fileName = __FILE__,
         size_t lineNumber = __LINE__
     ) {
-        this.log(Levels.ERROR, msg, exception, moduleName, functionName, fileName, lineNumber);
+        this.log(Levels.ERROR, msg, exception, attributes, moduleName, functionName, fileName, lineNumber);
     }
 
     public void error(
         Exception exception,
+        string[string] attributes = string[string].init,
         string moduleName = __MODULE__,
         string functionName = __PRETTY_FUNCTION__,
         string fileName = __FILE__,
         size_t lineNumber = __LINE__
     ) {
-        this.log(Levels.ERROR, exception, moduleName, functionName, fileName, lineNumber);
+        this.log(Levels.ERROR, exception, attributes, moduleName, functionName, fileName, lineNumber);
     }
 
     public void errorF(string fmt, T...)(
         T args,
         Exception exception = null,
+        string[string] attributes = string[string].init,
         string moduleName = __MODULE__,
         string functionName = __PRETTY_FUNCTION__,
         string fileName = __FILE__,
         size_t lineNumber = __LINE__
     ) {
-        this.logF!(fmt, T)(Levels.ERROR, args, exception, moduleName, functionName, fileName, lineNumber);
+        this.logF!(fmt, T)(Levels.ERROR, args, exception, attributes, moduleName, functionName, fileName, lineNumber);
     }
 
     public LogBuilder errorBuilder() {
@@ -453,6 +479,11 @@ struct LogMessage {
      * program's source.
      */
     public immutable LogMessageSourceContext sourceContext;
+
+    /** 
+     * A key-value map of any additional user-defined attributes.
+     */
+    public immutable string[string] attributes;
 }
 
 /** 
@@ -548,6 +579,7 @@ struct LogBuilder {
     private string message;
     private Logger logger;
     private Exception exception;
+    private string[string] attributes;
 
     /** 
      * Creates a log builder for the given logger.
@@ -593,6 +625,18 @@ struct LogBuilder {
     }
 
     /** 
+     * Adds an attribute to the log message.
+     * Params:
+     *   key = The attribute's key.
+     *   value = The value of the attribute.
+     * Returns: A reference to the builder.
+     */
+    public ref LogBuilder attr(string key, string value) return {
+        this.attributes[key] = value;
+        return this;
+    }
+
+    /** 
      * Builds the log message and adds it to the logger associated with this
      * builder, and adds source context information using default function
      * arguments.
@@ -623,7 +667,8 @@ struct LogBuilder {
                 functionName,
                 fileName,
                 lineNumber
-            )
+            ),
+            cast(immutable(string[string])) attributes.dup
         ));
     }
 }

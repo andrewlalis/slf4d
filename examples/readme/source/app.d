@@ -40,6 +40,7 @@ void example2Exceptions() {
 void example3Loggers() {
 	Logger logger = getLogger();
 	logger.info("Hello world!");
+	logger.info("This message has some custom attributes.", null, ["key1": "value1", "key2": "value2"]);
 
 	// The above code is equivalent to this:
 	info("Hello world!");

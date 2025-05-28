@@ -4,16 +4,16 @@ import slf4d;
 import slf4d.provider;
 import slf4d.default_provider : DefaultLoggerFactory;
 
-class CustomProvider : LoggingProvider {
-    LoggerFactory getLoggerFactory() {
+shared class CustomProvider : LoggingProvider {
+    shared(LoggerFactory) getLoggerFactory() shared {
         return new DefaultLoggerFactory(
             new CustomLogHandler()
         );
     }
 }
 
-class CustomLogHandler : LogHandler {
-    void handle(immutable LogMessage msg) {
+shared class CustomLogHandler : LogHandler {
+    void handle(immutable LogMessage msg) shared {
         import std.stdio;
         writeln(msg.level.name ~ ": " ~ msg.message);
     }

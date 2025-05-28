@@ -19,6 +19,13 @@ public string formatLogMessage(immutable LogMessage msg, bool colored) {
     if (!msg.exception.isNull()) {
         logStr ~= "\n" ~ formatExceptionInfo(msg.exception.get(), colored);
     }
+    if (msg.attributes.length > 0) {
+        import std.string : rightJustify;
+        logStr ~= "\n" ~ rightJustify("Attributes:", 42);
+        foreach (key, value; msg.attributes) {
+            logStr ~= "\n" ~ rightJustify(key ~ " = " ~ value, 46);
+        }
+    }
     return logStr;
 }
 

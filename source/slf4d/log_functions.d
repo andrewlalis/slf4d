@@ -22,6 +22,7 @@ import slf4d : getLogger;
  *   level = The logging level.
  *   msg = The message.
  *   exception = An optional exception to log.
+ *   attributes = Key-value pairs of additional user-defined attributes.
  *   moduleName = The name of the module where this log message was written.
  *   functionName = The name of the function where this log message was written.
  *   fileName = The name of the source file where this log message was written.
@@ -31,12 +32,13 @@ public void log(
     Level level,
     string msg,
     Exception exception = null,
+    string[string] attributes = string[string].init,
     string moduleName = __MODULE__,
     string functionName = __PRETTY_FUNCTION__,
     string fileName = __FILE__,
     size_t lineNumber = __LINE__
 ) {
-    getLogger(moduleName).log(level, msg, exception, moduleName, functionName, fileName, lineNumber);
+    getLogger(moduleName).log(level, msg, exception, attributes, moduleName, functionName, fileName, lineNumber);
 }
 
 /** 
@@ -44,6 +46,7 @@ public void log(
  * Params:
  *   level = The logging level.
  *   exception = The exception to log.
+ *   attributes = Key-value pairs of additional user-defined attributes.
  *   moduleName = The name of the module where this log message was written.
  *   functionName = The name of the function where this log message was written.
  *   fileName = The name of the source file where this log message was written.
@@ -52,12 +55,13 @@ public void log(
 public void log(
     Level level,
     Exception exception,
+    string[string] attributes = string[string].init,
     string moduleName = __MODULE__,
     string functionName = __PRETTY_FUNCTION__,
     string fileName = __FILE__,
     size_t lineNumber = __LINE__
 ) {
-    getLogger(moduleName).log(level, exception, moduleName, functionName, fileName, lineNumber);
+    getLogger(moduleName).log(level, exception, attributes, moduleName, functionName, fileName, lineNumber);
 }
 
 /** 
@@ -66,6 +70,7 @@ public void log(
  *   level = The logging level.
  *   args = The arguments to provide to the format string.
  *   exception = An optional exception to log.
+ *   attributes = Key-value pairs of additional user-defined attributes.
  *   moduleName = The name of the module where this log message was written.
  *   functionName = The name of the function where this log message was written.
  *   fileName = The name of the source file where this log message was written.
@@ -75,6 +80,7 @@ public void logF(string fmt, T...)(
     Level level,
     T args,
     Exception exception = null,
+    string[string] attributes = string[string].init,
     string moduleName = __MODULE__,
     string functionName = __PRETTY_FUNCTION__,
     string fileName = __FILE__,
@@ -83,7 +89,7 @@ public void logF(string fmt, T...)(
     auto logger = getLogger(moduleName);
     if (logger.level.value <= level.value) {
         import std.format : format;
-        logger.log(level, format!(fmt)(args), exception, moduleName, functionName, fileName, lineNumber);
+        logger.log(level, format!(fmt)(args), exception, attributes, moduleName, functionName, fileName, lineNumber);
     }
 }
 
@@ -92,6 +98,7 @@ public void logF(string fmt, T...)(
  * Params:
  *   msg = The message.
  *   exception = An optional exception to log.
+ *   attributes = Key-value pairs of additional user-defined attributes.
  *   moduleName = The name of the module where this log message was written.
  *   functionName = The name of the function where this log message was written.
  *   fileName = The name of the source file where this log message was written.
@@ -100,12 +107,13 @@ public void logF(string fmt, T...)(
 public void trace(
     string msg,
     Exception exception = null,
+    string[string] attributes = string[string].init,
     string moduleName = __MODULE__,
     string functionName = __PRETTY_FUNCTION__,
     string fileName = __FILE__,
     size_t lineNumber = __LINE__
 ) {
-    log(Levels.TRACE, msg, exception, moduleName, functionName, fileName, lineNumber);
+    log(Levels.TRACE, msg, exception, attributes, moduleName, functionName, fileName, lineNumber);
 }
 
 /** 
@@ -113,6 +121,7 @@ public void trace(
  * Params:
  *   level = The logging level.
  *   exception = The exception to log.
+ *   attributes = Key-value pairs of additional user-defined attributes.
  *   moduleName = The name of the module where this log message was written.
  *   functionName = The name of the function where this log message was written.
  *   fileName = The name of the source file where this log message was written.
@@ -120,12 +129,13 @@ public void trace(
  */
 public void trace(
     Exception exception,
+    string[string] attributes = string[string].init,
     string moduleName = __MODULE__,
     string functionName = __PRETTY_FUNCTION__,
     string fileName = __FILE__,
     size_t lineNumber = __LINE__
 ) {
-    log(Levels.TRACE, exception, moduleName, functionName, fileName, lineNumber);
+    log(Levels.TRACE, exception, attributes, moduleName, functionName, fileName, lineNumber);
 }
 
 /** 
@@ -134,6 +144,7 @@ public void trace(
  *   level = The logging level.
  *   args = The arguments to provide to the format string.
  *   exception = An optional exception to log.
+ *   attributes = Key-value pairs of additional user-defined attributes.
  *   moduleName = The name of the module where this log message was written.
  *   functionName = The name of the function where this log message was written.
  *   fileName = The name of the source file where this log message was written.
@@ -142,6 +153,7 @@ public void trace(
 public void traceF(string fmt, T...)(
     T args,
     Exception exception = null,
+    string[string] attributes = string[string].init,
     string moduleName = __MODULE__,
     string functionName = __PRETTY_FUNCTION__,
     string fileName = __FILE__,
@@ -150,7 +162,7 @@ public void traceF(string fmt, T...)(
     auto logger = getLogger(moduleName);
     if (logger.level.value <= Levels.TRACE.value) {
         import std.format : format;
-        logger.log(Levels.TRACE, format!(fmt)(args), exception, moduleName, functionName, fileName, lineNumber);
+        logger.log(Levels.TRACE, format!(fmt)(args), exception, attributes, moduleName, functionName, fileName, lineNumber);
     }
 }
 
@@ -159,6 +171,7 @@ public void traceF(string fmt, T...)(
  * Params:
  *   msg = The message.
  *   exception = An optional exception to log.
+ *   attributes = Key-value pairs of additional user-defined attributes.
  *   moduleName = The name of the module where this log message was written.
  *   functionName = The name of the function where this log message was written.
  *   fileName = The name of the source file where this log message was written.
@@ -167,12 +180,13 @@ public void traceF(string fmt, T...)(
 public void debug_(
     string msg,
     Exception exception = null,
+    string[string] attributes = string[string].init,
     string moduleName = __MODULE__,
     string functionName = __PRETTY_FUNCTION__,
     string fileName = __FILE__,
     size_t lineNumber = __LINE__
 ) {
-    log(Levels.DEBUG, msg, exception, moduleName, functionName, fileName, lineNumber);
+    log(Levels.DEBUG, msg, exception, attributes, moduleName, functionName, fileName, lineNumber);
 }
 
 /** 
@@ -180,6 +194,7 @@ public void debug_(
  * Params:
  *   level = The logging level.
  *   exception = The exception to log.
+ *   attributes = Key-value pairs of additional user-defined attributes.
  *   moduleName = The name of the module where this log message was written.
  *   functionName = The name of the function where this log message was written.
  *   fileName = The name of the source file where this log message was written.
@@ -187,12 +202,13 @@ public void debug_(
  */
 public void debug_(
     Exception exception,
+    string[string] attributes = string[string].init,
     string moduleName = __MODULE__,
     string functionName = __PRETTY_FUNCTION__,
     string fileName = __FILE__,
     size_t lineNumber = __LINE__
 ) {
-    log(Levels.DEBUG, exception, moduleName, functionName, fileName, lineNumber);
+    log(Levels.DEBUG, exception, attributes, moduleName, functionName, fileName, lineNumber);
 }
 
 /** 
@@ -201,6 +217,7 @@ public void debug_(
  *   level = The logging level.
  *   args = The arguments to provide to the format string.
  *   exception = An optional exception to log.
+ *   attributes = Key-value pairs of additional user-defined attributes.
  *   moduleName = The name of the module where this log message was written.
  *   functionName = The name of the function where this log message was written.
  *   fileName = The name of the source file where this log message was written.
@@ -209,6 +226,7 @@ public void debug_(
 public void debugF(string fmt, T...)(
     T args,
     Exception exception = null,
+    string[string] attributes = string[string].init,
     string moduleName = __MODULE__,
     string functionName = __PRETTY_FUNCTION__,
     string fileName = __FILE__,
@@ -217,7 +235,7 @@ public void debugF(string fmt, T...)(
     auto logger = getLogger(moduleName);
     if (logger.level.value <= Levels.DEBUG.value) {
         import std.format : format;
-        logger.log(Levels.DEBUG, format!(fmt)(args), exception, moduleName, functionName, fileName, lineNumber);
+        logger.log(Levels.DEBUG, format!(fmt)(args), exception, attributes, moduleName, functionName, fileName, lineNumber);
     }
 }
 
@@ -226,6 +244,7 @@ public void debugF(string fmt, T...)(
  * Params:
  *   msg = The message.
  *   exception = An optional exception to log.
+ *   attributes = Key-value pairs of additional user-defined attributes.
  *   moduleName = The name of the module where this log message was written.
  *   functionName = The name of the function where this log message was written.
  *   fileName = The name of the source file where this log message was written.
@@ -234,12 +253,13 @@ public void debugF(string fmt, T...)(
 public void info(
     string msg,
     Exception exception = null,
+    string[string] attributes = string[string].init,
     string moduleName = __MODULE__,
     string functionName = __PRETTY_FUNCTION__,
     string fileName = __FILE__,
     size_t lineNumber = __LINE__
 ) {
-    log(Levels.INFO, msg, exception, moduleName, functionName, fileName, lineNumber);
+    log(Levels.INFO, msg, exception, attributes, moduleName, functionName, fileName, lineNumber);
 }
 
 /** 
@@ -247,6 +267,7 @@ public void info(
  * Params:
  *   level = The logging level.
  *   exception = The exception to log.
+ *   attributes = Key-value pairs of additional user-defined attributes.
  *   moduleName = The name of the module where this log message was written.
  *   functionName = The name of the function where this log message was written.
  *   fileName = The name of the source file where this log message was written.
@@ -254,12 +275,13 @@ public void info(
  */
 public void info(
     Exception exception,
+    string[string] attributes = string[string].init,
     string moduleName = __MODULE__,
     string functionName = __PRETTY_FUNCTION__,
     string fileName = __FILE__,
     size_t lineNumber = __LINE__
 ) {
-    log(Levels.INFO, exception, moduleName, functionName, fileName, lineNumber);
+    log(Levels.INFO, exception, attributes, moduleName, functionName, fileName, lineNumber);
 }
 
 /** 
@@ -268,6 +290,7 @@ public void info(
  *   level = The logging level.
  *   args = The arguments to provide to the format string.
  *   exception = An optional exception to log.
+ *   attributes = Key-value pairs of additional user-defined attributes.
  *   moduleName = The name of the module where this log message was written.
  *   functionName = The name of the function where this log message was written.
  *   fileName = The name of the source file where this log message was written.
@@ -276,6 +299,7 @@ public void info(
 public void infoF(string fmt, T...)(
     T args,
     Exception exception = null,
+    string[string] attributes = string[string].init,
     string moduleName = __MODULE__,
     string functionName = __PRETTY_FUNCTION__,
     string fileName = __FILE__,
@@ -284,7 +308,7 @@ public void infoF(string fmt, T...)(
     auto logger = getLogger(moduleName);
     if (logger.level.value <= Levels.INFO.value) {
         import std.format : format;
-        logger.log(Levels.INFO, format!(fmt)(args), exception, moduleName, functionName, fileName, lineNumber);
+        logger.log(Levels.INFO, format!(fmt)(args), exception, attributes, moduleName, functionName, fileName, lineNumber);
     }
 }
 
@@ -293,6 +317,7 @@ public void infoF(string fmt, T...)(
  * Params:
  *   msg = The message.
  *   exception = An optional exception to log.
+ *   attributes = Key-value pairs of additional user-defined attributes.
  *   moduleName = The name of the module where this log message was written.
  *   functionName = The name of the function where this log message was written.
  *   fileName = The name of the source file where this log message was written.
@@ -301,12 +326,13 @@ public void infoF(string fmt, T...)(
 public void warn(
     string msg,
     Exception exception = null,
+    string[string] attributes = string[string].init,
     string moduleName = __MODULE__,
     string functionName = __PRETTY_FUNCTION__,
     string fileName = __FILE__,
     size_t lineNumber = __LINE__
 ) {
-    log(Levels.WARN, msg, exception, moduleName, functionName, fileName, lineNumber);
+    log(Levels.WARN, msg, exception, attributes, moduleName, functionName, fileName, lineNumber);
 }
 
 /** 
@@ -314,6 +340,7 @@ public void warn(
  * Params:
  *   level = The logging level.
  *   exception = The exception to log.
+ *   attributes = Key-value pairs of additional user-defined attributes.
  *   moduleName = The name of the module where this log message was written.
  *   functionName = The name of the function where this log message was written.
  *   fileName = The name of the source file where this log message was written.
@@ -321,12 +348,13 @@ public void warn(
  */
 public void warn(
     Exception exception,
+    string[string] attributes = string[string].init,
     string moduleName = __MODULE__,
     string functionName = __PRETTY_FUNCTION__,
     string fileName = __FILE__,
     size_t lineNumber = __LINE__
 ) {
-    log(Levels.WARN, exception, moduleName, functionName, fileName, lineNumber);
+    log(Levels.WARN, exception, attributes, moduleName, functionName, fileName, lineNumber);
 }
 
 /** 
@@ -335,6 +363,7 @@ public void warn(
  *   level = The logging level.
  *   args = The arguments to provide to the format string.
  *   exception = An optional exception to log.
+ *   attributes = Key-value pairs of additional user-defined attributes.
  *   moduleName = The name of the module where this log message was written.
  *   functionName = The name of the function where this log message was written.
  *   fileName = The name of the source file where this log message was written.
@@ -343,6 +372,7 @@ public void warn(
 public void warnF(string fmt, T...)(
     T args,
     Exception exception = null,
+    string[string] attributes = string[string].init,
     string moduleName = __MODULE__,
     string functionName = __PRETTY_FUNCTION__,
     string fileName = __FILE__,
@@ -351,7 +381,7 @@ public void warnF(string fmt, T...)(
     auto logger = getLogger(moduleName);
     if (logger.level.value <= Levels.WARN.value) {
         import std.format : format;
-        logger.log(Levels.WARN, format!(fmt)(args), exception, moduleName, functionName, fileName, lineNumber);
+        logger.log(Levels.WARN, format!(fmt)(args), exception, attributes, moduleName, functionName, fileName, lineNumber);
     }
 }
 
@@ -360,6 +390,7 @@ public void warnF(string fmt, T...)(
  * Params:
  *   msg = The message.
  *   exception = An optional exception to log.
+ *   attributes = Key-value pairs of additional user-defined attributes.
  *   moduleName = The name of the module where this log message was written.
  *   functionName = The name of the function where this log message was written.
  *   fileName = The name of the source file where this log message was written.
@@ -368,12 +399,13 @@ public void warnF(string fmt, T...)(
 public void error(
     string msg,
     Exception exception = null,
+    string[string] attributes = string[string].init,
     string moduleName = __MODULE__,
     string functionName = __PRETTY_FUNCTION__,
     string fileName = __FILE__,
     size_t lineNumber = __LINE__
 ) {
-    log(Levels.ERROR, msg, exception, moduleName, functionName, fileName, lineNumber);
+    log(Levels.ERROR, msg, exception, attributes, moduleName, functionName, fileName, lineNumber);
 }
 
 /** 
@@ -381,6 +413,7 @@ public void error(
  * Params:
  *   level = The logging level.
  *   exception = The exception to log.
+ *   attributes = Key-value pairs of additional user-defined attributes.
  *   moduleName = The name of the module where this log message was written.
  *   functionName = The name of the function where this log message was written.
  *   fileName = The name of the source file where this log message was written.
@@ -388,12 +421,13 @@ public void error(
  */
 public void error(
     Exception exception,
+    string[string] attributes = string[string].init,
     string moduleName = __MODULE__,
     string functionName = __PRETTY_FUNCTION__,
     string fileName = __FILE__,
     size_t lineNumber = __LINE__
 ) {
-    log(Levels.ERROR, exception, moduleName, functionName, fileName, lineNumber);
+    log(Levels.ERROR, exception, attributes, moduleName, functionName, fileName, lineNumber);
 }
 
 /** 
@@ -402,6 +436,7 @@ public void error(
  *   level = The logging level.
  *   args = The arguments to provide to the format string.
  *   exception = An optional exception to log.
+ *   attributes = Key-value pairs of additional user-defined attributes.
  *   moduleName = The name of the module where this log message was written.
  *   functionName = The name of the function where this log message was written.
  *   fileName = The name of the source file where this log message was written.
@@ -410,6 +445,7 @@ public void error(
 public void errorF(string fmt, T...)(
     T args,
     Exception exception = null,
+    string[string] attributes = string[string].init,
     string moduleName = __MODULE__,
     string functionName = __PRETTY_FUNCTION__,
     string fileName = __FILE__,
@@ -418,8 +454,14 @@ public void errorF(string fmt, T...)(
     auto logger = getLogger(moduleName);
     if (logger.level.value <= Levels.ERROR.value) {
         import std.format : format;
-        logger.log(Levels.ERROR, format!(fmt)(args), exception, moduleName, functionName, fileName, lineNumber);
+        logger.log(Levels.ERROR, format!(fmt)(args), exception, attributes, moduleName, functionName, fileName, lineNumber);
     }
+}
+
+import slf4d.logger : LogBuilder;
+
+public LogBuilder logBuilder(string moduleName = __MODULE__){
+    return getLogger(moduleName).builder();
 }
 
 unittest {
@@ -444,7 +486,17 @@ unittest {
 
         // Test formatted functions with argument and an exception.
         Exception exc = new Exception("Uh oh");
-        // logF!"Testing logF %d"(Levels.INFO, 42, exc); TODO: Get this to work somehow!
+        
+        // Test calling the builder function.
+        logBuilder()
+            .lvl(Levels.DEBUG)
+            .msg("Testing builder")
+            .attr("test", "yes")
+            .log();
+        provider.assertHasMessage("Testing builder");
+        LogMessage msg = provider.messages[0];
+        assert(msg.level == Levels.DEBUG);
+        assert(msg.attributes["test"] == "yes");
 
         resetLoggingState();
     }
