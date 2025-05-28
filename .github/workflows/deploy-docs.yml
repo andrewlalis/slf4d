@@ -21,13 +21,13 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Pages
-        uses: actions/configure-pages@v2
+        uses: actions/configure-pages@v5
 
       - name: Setup Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 16
     
@@ -39,7 +39,7 @@ jobs:
         uses: dlang-community/setup-dlang@v1
 
       - name: Checkout Ddoc generator
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: adamdruppe/adrdox
           path: './docs/ddoc-gen-src'
@@ -55,7 +55,7 @@ jobs:
         run: npm run build
         
       - name: Upload to Pages
-        uses: actions/upload-pages-artifact@v1
+        uses: actions/upload-pages-artifact@v3
         with:
           path: ./docs/src/.vuepress/dist
 
@@ -68,4 +68,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v1
+        uses: actions/deploy-pages@v4
