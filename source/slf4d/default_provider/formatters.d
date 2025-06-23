@@ -38,16 +38,15 @@ public string formatLogMessage(immutable LogMessage msg, bool colored) {
  * Returns: The formatted timestamp.
  */
 public string formatTimestamp(SysTime timestamp, bool colored) {
-    import std.format : format;
-    string s = format!"%04d-%02d-%02dT%02d:%02d:%02d.%03d"(
-        timestamp.year,
-        timestamp.month,
-        timestamp.day,
-        timestamp.hour,
-        timestamp.minute,
-        timestamp.second,
-        timestamp.fracSecs.total!"msecs"
-    );
+    import std.conv : to;
+    import std.string : rightJustify;
+    string s = to!string(timestamp.year) ~ "-" ~
+        to!string(timestamp.month).rightJustify(2, '0') ~ "-" ~
+        to!string(timestamp.day).rightJustify(2, '0') ~ "T" ~
+        to!string(timestamp.hour).rightJustify(2, '0') ~ ":" ~
+        to!string(timestamp.minute).rightJustify(2, '0') ~ ":" ~
+        to!string(timestamp.second).rightJustify(2, '0') ~ "." ~
+        to!string(timestamp.fracSecs.total!"msecs").rightJustify(3, '0');
     if (colored) {
         s = "\033[90m" ~ s ~ "\033[0m";
     }
