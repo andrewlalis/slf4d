@@ -7,4 +7,5 @@ module slf4d.default_provider;
 
 public import slf4d.default_provider.provider;
 public import slf4d.default_provider.factory;
-public import slf4d.default_provider.handler;
+public import slf4d.default_provider.serializers;
+public import slf4d.default_provider.writers;

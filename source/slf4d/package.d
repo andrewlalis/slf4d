@@ -9,13 +9,14 @@ module slf4d;
 public import slf4d.logger;
 public import slf4d.factory;
 public import slf4d.handler;
+public import slf4d.provider;
+public import slf4d.writer;
 public import slf4d.level;
 public import slf4d.log_functions;
 
 // Below the public imports, we define some common global state for the SLF4D
 // logging system.
 
-import slf4d.provider;
 import core.atomic;
 
 /** 

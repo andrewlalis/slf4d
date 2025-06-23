@@ -29,10 +29,77 @@ shared interface LogHandler {
 }
 
 /**
+ * A log handler that serializes incoming messages, and uses one or more
+ * `LogWriter` instances to write the serialized messages to some output
+ * resources, like the console, files, or network devices.
+ */
+shared class SerializingLogHandler : LogHandler {
+    import slf4d.writer : LogSerializer, LogWriter;
+
+    private LogSerializer serializer;
+    private LogWriter[] writers;
+
+    public this(shared LogSerializer serializer, shared LogWriter[] writers) {
+        this.serializer = serializer;
+        this.writers = writers;
+    }
+
+    void handle(immutable LogMessage msg) {
+        import std.stdio;
+        try {
+            string serialized = this.serializer.serialize(msg);
+            foreach (writer; this.writers) {
+                try {
+                    writer.write(msg, serialized);
+                } catch (Exception e) {
+                    stderr.writefln!"Failed to write log message: %s"(e.msg);
+                }
+            }
+        } catch (Exception e) {
+            stderr.writefln!"Failed to serialize log message: %s"(e.msg);
+        }
+    }
+}
+
+unittest {
+    import slf4d.writer;
+    import slf4d.logger;
+
+    class TestSerializer : LogSerializer {
+        string serialize(immutable LogMessage msg) shared {
+            return msg.message;
+        }
+    }
+
+    class TestWriter : LogWriter {
+        string[] messages;
+        void write(immutable LogMessage _, string serializedMessage) shared {
+            messages ~= serializedMessage;
+        }
+    }
+
+    auto writer = new shared TestWriter();
+    auto writer2 = new shared TestWriter();
+    auto handler = new SerializingLogHandler(
+        new shared TestSerializer(),
+        [writer, writer2]
+    );
+    Logger logger = Logger(handler);
+    logger.info("Testing");
+    logger.warn("This is another message.");
+    assert(writer.messages.length == 2);
+    assert(writer.messages[0] == "Testing");
+    assert(writer.messages[1] == "This is another message.");
+    assert(writer2.messages.length == 2);
+    assert(writer2.messages[0] == "Testing");
+    assert(writer2.messages[1] == "This is another message.");
+}
+
+/**
  * A log handler that discards all messages. Useful for testing.
  */
 class DiscardingLogHandler : LogHandler {
-    public void handle(immutable LogMessage msg) shared {
+    public void handle(immutable LogMessage _) shared {
         // Do nothing.
     }
 }
