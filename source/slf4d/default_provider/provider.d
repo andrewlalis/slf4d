@@ -78,6 +78,17 @@ private shared class DefaultProviderBuilder {
     }
 
     /**
+     * Configures the logging provider to use a basic console serializer.
+     * Params:
+     *   colored = Whether to use colored output in the console.
+     *   loggerNameLengthLimit = The maximum length of logger names to display.
+     */
+    auto withConsoleSerializer(bool colored = true, size_t loggerNameLengthLimit = 24) {
+        this.serializer = new ConsoleTextLogSerializer(colored, loggerNameLengthLimit);
+        return this;
+    }
+
+    /**
      * Configures the logging provider to send serialized log messages to the
      * given writer for output. Note that this can be called multiple times to
      * add multiple writers.

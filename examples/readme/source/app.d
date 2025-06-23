@@ -2,7 +2,7 @@ import slf4d;
 import slf4d.default_provider;
 
 void main() {
-	configureLoggingProvider(new DefaultProvider(true, Levels.TRACE));
+	configureLoggingProvider(new DefaultProvider(Levels.TRACE));
 
 	example1Main();
 	example2Exceptions();

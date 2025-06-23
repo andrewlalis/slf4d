@@ -25,7 +25,7 @@ shared class ConsoleTextLogSerializer : LogSerializer {
     private bool ansiColors;
     private size_t loggerNameLengthLimit;
 
-    this(bool ansiColors = true, size_t loggerNameLengthLimit = 48) {
+    this(bool ansiColors = true, size_t loggerNameLengthLimit = 24) {
         this.ansiColors = ansiColors;
         this.loggerNameLengthLimit = loggerNameLengthLimit;
     }
@@ -42,6 +42,10 @@ shared class ConsoleTextLogSerializer : LogSerializer {
             logStr ~= "\n" ~ formatAttributes(msg.attributes);
         }
         return logStr;
+    }
+
+    private size_t messageTextOffset() {
+        return loggerNameLengthLimit + LOG_LEVEL_TEXT_WIDTH + ISO8601_TIMESTAMP_LENGTH + 3;
     }
 
     protected string formatLoggerName(string name) {
@@ -113,6 +117,8 @@ shared class ConsoleTextLogSerializer : LogSerializer {
     }
 
     protected string formatExceptionInfo(ExceptionInfo info) {
+        import std.range;
+        import std.algorithm;
         string exceptionName = info.exceptionClassName;
         if (ansiColors) {
             exceptionName = "\033[31;1m" ~ exceptionName ~ "\033[0m";
@@ -121,20 +127,25 @@ shared class ConsoleTextLogSerializer : LogSerializer {
         if (ansiColors) {
             sourceLocation = "\033[97;4m" ~ sourceLocation ~ "\033[0m";
         }
-        string titleMessage = exceptionName ~ " thrown in " ~ sourceLocation ~ ": " ~ info.message;
+        auto s = only(
+            repeat(' ', messageTextOffset()).array.idup,
+            exceptionName, " thrown in ", sourceLocation, ": ", info.message
+        );
         if (!info.stackTrace.isNull) {
-            string traceStr = info.stackTrace.get();
+            auto lines = info.stackTrace.get().splitter('\n')
+                .map!(line => only(repeat(' ', messageTextOffset() + 2).array.idup, line).joiner());
+            string traceStr = lines.join("\n").to!string;
             if (ansiColors) {
                 traceStr = "\033[31m" ~ traceStr ~ "\033[0m";
             }
-            titleMessage ~= "\n" ~ traceStr;
+            return s.join() ~ "\n" ~ traceStr;
         }
-        return titleMessage;
+        return s.join();
     }
 
     protected string formatAttributes(immutable(string[string]) attributes) {
         import std.range : repeat, array;
-        size_t attributesIndentation = loggerNameLengthLimit + LOG_LEVEL_TEXT_WIDTH + ISO8601_TIMESTAMP_LENGTH + 3;
+        size_t attributesIndentation = messageTextOffset();
         string s;
         if (ansiColors) {
             s = repeat(' ', attributesIndentation).array.idup ~ "\033[4;37mAttributes:\033[0m";
