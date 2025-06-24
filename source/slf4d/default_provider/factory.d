@@ -141,8 +141,6 @@ unittest {
     f2.setModuleLevel("^my_module\\.b$", Levels.TRACE);
     Logger log3 = f2.getLogger("my_module.a"); // First a logger that matches the first module level.
     log3.info("Testing");
-    import std.stdio;
-    writeln(log3, handler.messageCount(), handler.getMessages());
     assert(handler.messageCount() == 1);
     log3.debug_("Testing debug");
     assert(handler.messageCount() == 2);

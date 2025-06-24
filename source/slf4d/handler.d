@@ -169,13 +169,32 @@ shared class CachingLogHandler : LogHandler {
     }
 }
 
-unittest {
+unittest {// Test basic functionality.
     import slf4d.logger : Logger;
     auto handler = new CachingLogHandler();
     auto logger = Logger(handler);
     assert(handler.getMessages().length == 0);
     logger.info("Hello world!");
     assert(handler.getMessages().length == 1);
+}
+
+unittest {// Test thread-safety.
+    import core.thread;
+    import slf4d.logger : Logger;
+    CachingLogHandler handler = new CachingLogHandler();
+    Thread[] threads;
+    for (int i = 0; i < 10; i++) {
+        threads ~= new Thread({
+            Logger logger = Logger(handler);
+            for (int j = 0; j < 100; j++) {
+                logger.infoF!"Message from thread %d: %d"(Thread.getThis().id, j);
+            }
+        });
+    }
+    foreach (t; threads) t.start();
+    foreach (t; threads) t.join();
+    // Check that all messages were logged.
+    assert(handler.messageCount() == 1000);
 }
 
 /**
