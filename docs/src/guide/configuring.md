@@ -11,7 +11,7 @@ import slf4d;
 import slf4d.default_provider;
 
 void main() {
-    auto provider = new DefaultProvider(false, Levels.TRACE);
+    auto provider = new DefaultProvider(Levels.TRACE);
     configureLoggingProvider(provider);
 
     info("Application started!");
