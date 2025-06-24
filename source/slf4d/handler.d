@@ -187,7 +187,7 @@ unittest {// Test thread-safety.
         threads ~= new Thread({
             Logger logger = Logger(handler);
             for (int j = 0; j < 100; j++) {
-                logger.infoF!"Message from thread %d: %d"(Thread.getThis().id, j);
+                logger.infoF!"Message from thread %s: %d"(Thread.getThis().name, j);
             }
         });
     }
