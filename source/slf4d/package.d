@@ -169,3 +169,29 @@ unittest {
         resetLoggingState();
     }
 }
+
+/**
+ * An exception that may be thrown by certain logging features. Within SLF4D,
+ * documentation will be provided to declare whenever a function may throw this
+ * exception.
+ */
+public class LoggingException : Exception {
+    /**
+     * Constructs this exception with a message and throwable cause.
+     * Params:
+     *   msg = The message to provide.
+     *   next = The throwable that caused this exception.
+     */
+    this(string msg, Throwable next) {
+        super(msg, next);
+    }
+
+    /**
+     * Constructs this exception with a message.
+     * Params:
+     *   msg = The message to provide.
+     */
+    this(string msg) {
+        super(msg);
+    }
+}

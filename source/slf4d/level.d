@@ -4,6 +4,7 @@
  * where that message gets routed.
  */
 module slf4d.level;
+import slf4d;
 
 /** 
  * The set of pre-defined logging levels that are universally recognized.
@@ -27,7 +28,7 @@ const enum Levels {
     INFO = Level(30, "INFO"),
 
     /** 
-     * A higher severity log level for reporting anomalous but non-fatal issues
+     * A namehigher severity log level for reporting anomalous but non-fatal issues
      * that arise at runtime.
      */
     WARN = Level(40, "WARN"),
@@ -44,6 +45,59 @@ unittest {
     assert(Levels.DEBUG.value < Levels.INFO.value);
     assert(Levels.INFO.value < Levels.WARN.value);
     assert(Levels.WARN.value < Levels.ERROR.value);
+}
+
+/**
+ * Attempts to parse one of the standard logging levels defined by `Levels`
+ * from a string. The provided string is checked against the names of each of
+ * the defined logging levels, and the level whose name matches is returned,
+ * ignoring capitalization or whitespace.
+ * Params:
+ *   s = The string to parse.
+ * Returns: The level that was parsed, or if none was found, a `LoggingException`
+ * is thrown.
+ */
+Level parseLoggingLevel(string s) {
+    import std.string : strip, toUpper;
+    import std.traits : EnumMembers;
+    if (s is null || s.strip.toUpper.length == 0) {
+        throw new LoggingException("Cannot parse logging level from a null or empty string.");
+    }
+    s = s.strip.toUpper;
+    static foreach(lvl; EnumMembers!Levels) {
+        if (s == lvl.name) {
+            return lvl;
+        }
+    }
+    throw new LoggingException("String \"" ~ s ~ "\" didn't match any logging level.");
+}
+
+unittest {
+    assert(parseLoggingLevel("TRACE") == Levels.TRACE);
+    assert(parseLoggingLevel("DEBUG") == Levels.DEBUG);
+    assert(parseLoggingLevel("INFO") == Levels.INFO);
+    assert(parseLoggingLevel("WARN") == Levels.WARN);
+    assert(parseLoggingLevel("ERROR") == Levels.ERROR);
+    // Check that case-sensitivity and whitespace don't matter.
+    assert(parseLoggingLevel(" inFo\n") == Levels.INFO);
+    try {// Check that invalid strings throw an exception.
+        auto l = parseLoggingLevel("not a logging level");
+        assert(false, "Expected parseLoggingLevel to throw, but returned " ~ l.name);
+    } catch (LoggingException e) {
+        // This is fine.
+    }
+    try {// Null strings should also throw.
+        auto l = parseLoggingLevel(null);
+        assert(false, "Expected parseLoggingLevel to throw, but returned " ~ l.name);
+    } catch (LoggingException e) {
+        // This is fine.
+    }
+    try {
+        auto l = parseLoggingLevel("");
+        assert(false, "Expected parseLoggingLevel to throw, but returned " ~ l.name);
+    } catch (LoggingException e) {
+        // This is fine.
+    }
 }
 
 /** 
